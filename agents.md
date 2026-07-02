@@ -13,6 +13,11 @@ Create and deploy Sara Aminpour's personal website at `saraaminpour.com`, using 
 - GitHub CLI is installed but not authenticated yet.
 - Cloudflare API credentials are not present in the environment yet.
 - Chrome is running, but the Codex Chrome Extension is disabled in the selected Chrome profile, so browser automation cannot currently use the logged-in Chrome sessions.
+- Local production build passed with `npm run build`.
+- Local dev server was started at `http://127.0.0.1:5173/`.
+- Desktop and mobile layout checks passed in the in-app browser; desktop portrait rail remains sticky while content scrolls, and mobile has no horizontal overflow.
+- Initial local git commit: `2aacb9b` (`Initial personal website`).
+- GitHub device login is pending user approval. Do not store the one-time code here.
 
 ## Website Implementation
 
