@@ -7,6 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "cloudflare:setup": "node scripts/cloudflare-setup.mjs",
     "deploy": "npm run build && wrangler pages deploy dist --project-name=saraaminpour --branch=main"
   },
   "dependencies": {

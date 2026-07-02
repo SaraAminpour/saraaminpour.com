@@ -31,3 +31,15 @@ Recommended Cloudflare API token scope:
 - Zone > DNS > Edit, scoped to `saraaminpour.com`, only if DNS records must be managed by automation.
 
 Do not commit `.env` files or token values.
+
+After loading the two secret values into the shell environment, check the planned Cloudflare changes:
+
+```powershell
+npm run cloudflare:setup
+```
+
+Apply the setup:
+
+```powershell
+npm run cloudflare:setup -- --apply
+```

@@ -28,6 +28,7 @@ Create and deploy Sara Aminpour's personal website at `saraaminpour.com`, using 
   - `src/styles.css`
   - `public/portrait-placeholder.svg`
   - `.github/workflows/deploy.yml`
+  - `scripts/cloudflare-setup.mjs`
 - The portrait is currently a placeholder at `public/portrait-placeholder.svg`.
 - When Sara uploads the real portrait, preserve the original portrait file unchanged. Add any generated/background-adjusted derivative as a separate file, then point `src/main.tsx` to the derivative.
 
@@ -42,7 +43,8 @@ Create and deploy Sara Aminpour's personal website at `saraaminpour.com`, using 
    - Zone > DNS > Edit, scoped to `saraaminpour.com`, only if automation will manage DNS records.
 5. Store `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` as GitHub Actions repository secrets.
 6. Create/deploy Cloudflare Pages project `saraaminpour`.
-7. Add `saraaminpour.com` as a Pages custom domain. Cloudflare docs warn that a raw CNAME alone is not enough.
+7. Run `npm run cloudflare:setup -- --apply` once `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` are available in the shell environment. This creates/checks the Pages project, apex/www custom domains, and proxied CNAME records.
+8. Cloudflare docs warn that a raw CNAME alone is not enough; the Pages custom domain API/dashboard association is required too.
 
 ## Useful Sources Checked
 
