@@ -28,6 +28,7 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - Local dev server was started at `http://127.0.0.1:5173/`.
 - Desktop and mobile layout checks passed in the in-app browser; desktop portrait rail remains sticky while content scrolls, and mobile has no horizontal overflow.
 - Deployment setup commit: `940da2d` (`Use Cloudflare zone domain`).
+- Real portrait source copied unchanged into the site at `public/saraaminpour.JPG`.
 
 ## Website Implementation
 
@@ -36,11 +37,27 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - Main files:
   - `src/main.tsx`
   - `src/styles.css`
-  - `public/portrait-placeholder.svg`
+  - `public/saraaminpour.JPG`
   - `.github/workflows/deploy.yml`
   - `scripts/cloudflare-setup.mjs`
-- The portrait is currently a placeholder at `public/portrait-placeholder.svg`.
-- When Sara uploads the real portrait, preserve the original portrait file unchanged. Add any generated/background-adjusted derivative as a separate file, then point `src/main.tsx` to the derivative.
+- The portrait file at `public/saraaminpour.JPG` is the original uploaded image and should remain unchanged.
+- If a generated/background-adjusted derivative is added later, save it as a separate asset and update `src/main.tsx` to use that derivative. Do not overwrite the original portrait.
+
+## API And Authentication Notes
+
+- Cloudflare API token:
+  - Token name in Cloudflare: `saraaminpour-pages-deploy`.
+  - Purpose: allow automation to deploy the static site to Cloudflare Pages and manage the required custom-domain DNS records.
+  - Stored location: GitHub repository secret `CLOUDFLARE_API_TOKEN`; the raw token value is not stored in this repository and must never be added to `agents.md`, `.env.example`, README, commits, logs, or chat.
+  - Required companion value: `CLOUDFLARE_ACCOUNT_ID`, also stored as a GitHub repository secret. This is the Cloudflare account identifier used by Wrangler and `scripts/cloudflare-setup.mjs`.
+  - Granted permissions: Cloudflare Pages Edit on the selected Cloudflare account, plus DNS Edit and Zone Read only for the `sara-aminpour.com` zone.
+  - Expected use: GitHub Actions passes the token to `cloudflare/wrangler-action@v3` in `.github/workflows/deploy.yml`; local setup can also use it through environment variables when running `npm run cloudflare:setup -- --apply`.
+  - Security boundary: this token is intentionally limited to website deployment and DNS/domain setup for this site. It should not be used for billing, user management, unrelated zones, email, analytics, or any Cloudflare account administration outside this website setup.
+- GitHub authentication:
+  - GitHub CLI is authenticated locally as `SaraAminpour` using GitHub's device-login flow.
+  - Purpose: create/update the repository, push commits, set GitHub Actions secrets, and trigger or inspect workflow runs.
+  - Storage: the GitHub authentication token is managed by `gh` locally, not by this repository. Do not copy it into files or chat.
+  - If future GitHub operations fail with an authentication error, run `gh auth status` first; if needed, re-authenticate with `gh auth login`.
 
 ## Deployment Plan
 
@@ -51,7 +68,8 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 5. Completed: Cloudflare Pages project `saraaminpour` was created.
 6. Completed: `npm run cloudflare:setup -- --apply` created/checked the Pages project, apex/www custom domains, and proxied CNAME records for `sara-aminpour.com`.
 7. Completed: GitHub Actions deployment succeeded and all public URLs above were verified.
-8. Remaining: Sara needs to upload the real portrait. Preserve the original portrait file unchanged; create any background-expanded derivative as a separate asset and update `src/main.tsx` to use that derivative.
+8. Completed locally: Sara uploaded the real portrait and it was copied unchanged to `public/saraaminpour.JPG`.
+9. For this and future visual changes, run `npm run build`, push to `main`, monitor the GitHub Actions deployment, and verify the public URLs after the workflow completes.
 
 ## Useful Sources Checked
 

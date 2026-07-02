@@ -62,8 +62,10 @@ function App() {
         <div className="portrait-stage">
           <img
             className="portrait-image"
-            src="/portrait-placeholder.svg"
+            src="/saraaminpour.JPG"
             alt="Sara Aminpour portrait"
+            width="2784"
+            height="4176"
           />
         </div>
       </aside>
@@ -172,7 +174,7 @@ function App() {
         </section>
 
         <section className="closing-panel" id="contact">
-          <p>University of Oklahoma · INQUIRE Laboratory</p>
+          <p>University of Oklahoma / INQUIRE Laboratory</p>
           <h2>Open to research conversations, collaborations, and speaking opportunities.</h2>
           <a className="text-link" href="mailto:sara.aminpour@ou.edu">
             sara.aminpour@ou.edu
