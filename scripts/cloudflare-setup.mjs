@@ -1,6 +1,6 @@
 const API_BASE = "https://api.cloudflare.com/client/v4";
 const PROJECT_NAME = "saraaminpour";
-const ROOT_DOMAIN = "saraaminpour.com";
+const ROOT_DOMAIN = "sara-aminpour.com";
 const PAGES_HOST = `${PROJECT_NAME}.pages.dev`;
 const CUSTOM_DOMAINS = [ROOT_DOMAIN, `www.${ROOT_DOMAIN}`];
 const apply = process.argv.includes("--apply");
