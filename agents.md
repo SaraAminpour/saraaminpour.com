@@ -32,8 +32,12 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 
 ## Website Implementation
 
-- Stack: Vite, React, TypeScript, lucide-react.
-- Visual direction: minimalist white/gray editorial layout with a large sticky portrait rail.
+- Stack: Vite, React, TypeScript.
+- Visual direction (redesigned 2026-07-01): editorial "research monograph" concept — Fraunces/Newsreader/Spline Sans Mono typography, § numbered sections, IEEE-style index terms, reference-list publications, scroll-reveal and ticker animations with `prefers-reduced-motion` support.
+- Background: `public/backdrop-texture.png`, generated with the GPT image tool (codex-imagegen-sdk skill) to match the gray-mauve studio backdrop of the portrait (#8a8894). The portrait is framed as "Fig. 01" on this backdrop.
+- Sticker accent: `public/little-sara-sticker.png`, an ink-and-watercolor derivative of Sara's childhood sticker (`C:\Users\Sara\Downloads\sticker.webp`), shown in the Correspondence section as "Fig. 02". Favicon, apple-touch-icon, and `og-image.jpg` are sharp-composited from these two generated assets (script kept in `tmp/make-icons.mjs`, gitignored).
+- Design constraints from Sara: never edit `public/saraaminpour.JPG`; no hand-authored SVG artwork (raster art comes from the GPT image tool); avoid the generic AI look (Inter, purple gradients, glassmorphism).
+- Local dev: port 5173 is often occupied by another process; `.claude/launch.json` runs Vite on 5186.
 - Main files:
   - `src/main.tsx`
   - `src/styles.css`
