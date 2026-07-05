@@ -1,17 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+﻿import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
 const experiences = [
   {
-    period: "2025 — 2026",
+    period: "2025 â€” 2026",
     role: "Instructor, Cybersecurity Essential Training Workshop",
     place: "University of Oklahoma, Gallogly College of Engineering",
     details:
       "Led hands-on sessions on quantum cybersecurity, post-quantum cryptography, quantum key distribution, and quantum attack models for professional audiences."
   },
   {
-    period: "2024 — present",
+    period: "2024 â€” present",
     role: "Teaching Assistant",
     place: "University of Oklahoma",
     details:
@@ -29,7 +29,7 @@ const experiences = [
 const publications = [
   {
     title:
-      "Strategic Data Re-Uploads: A Pathway to Improved Quantum Classification — Data Re-Uploading Strategies for Improved Quantum Classifier Performance",
+      "Strategic Data Re-Uploads: A Pathway to Improved Quantum Classification â€” Data Re-Uploading Strategies for Improved Quantum Classifier Performance",
     venue: "Entropy",
     year: "2026"
   },
@@ -80,6 +80,62 @@ const tickerTopics = [
   "Hybrid quantum learning",
   "Qiskit simulation",
   "Quantum cybersecurity"
+];
+
+const quantumBasics = [
+  {
+    label: "Classical bit",
+    title: "One definite answer",
+    body:
+      "A normal computer stores information as bits. Each bit is either 0 or 1, and a calculation is a long, reliable sequence of logic operations on those bits."
+  },
+  {
+    label: "Qubit",
+    title: "A weighted possibility",
+    body:
+      "A quantum computer stores information in qubits. Before measurement, a qubit is described by amplitudes: weighted possibilities for 0 and 1 that can interfere with each other."
+  },
+  {
+    label: "Measurement",
+    title: "A probability becomes data",
+    body:
+      "When we measure a qubit, we get an ordinary classical result. The art of quantum algorithm design is arranging amplitudes so useful answers become more likely before measurement."
+  }
+];
+
+const calculationSteps = [
+  "Encode the problem into qubits.",
+  "Apply quantum gates that rotate, entangle, and interfere amplitudes.",
+  "Measure many times to estimate probabilities or expectation values.",
+  "Use the measured statistics to choose, classify, optimize, or simulate."
+];
+
+const hybridSteps = [
+  {
+    side: "Classical",
+    title: "Data, loss, and optimizer",
+    body:
+      "A classical computer stores the dataset, prepares features, computes the loss, and updates trainable parameters with an optimizer such as gradient descent."
+  },
+  {
+    side: "Quantum",
+    title: "Parameterized circuit",
+    body:
+      "A quantum processor runs a circuit whose gates depend on those parameters. The circuit prepares a quantum state, entangles qubits, and returns measurements."
+  },
+  {
+    side: "Loop",
+    title: "Back and forth training",
+    body:
+      "The classical side proposes parameters, the quantum side evaluates the circuit, and the classical side updates the parameters. That repeated loop is why the method is called hybrid."
+  }
+];
+
+const pureQuantumNotes = [
+  "The model state, learning transformation, and inference are represented directly on quantum hardware.",
+  "Training may use quantum subroutines such as phase estimation, amplitude amplification, quantum kernels, or quantum linear algebra.",
+  "A classical computer can still start the job and read the final measurement, but the central learning dynamics are quantum rather than a classical optimizer steering a small circuit.",
+  "This is the long-term vision for large fault-tolerant quantum computers; today, most practical experiments are still hybrid."
 ];
 
 function ScrollProgress() {
@@ -164,7 +220,7 @@ function Reveal({ children, className = "", delay = 0, as = "div" }: RevealProps
 function SectionHead({ no, name }: { no: string; name: string }) {
   return (
     <Reveal className="sec-head" as="header">
-      <span className="sec-no">§ {no}</span>
+      <span className="sec-no">Â§ {no}</span>
       <span className="sec-rule" aria-hidden="true" />
       <span className="sec-name">{name}</span>
     </Reveal>
@@ -176,7 +232,7 @@ function Ticker() {
     <span className="ticker-item" key={i}>
       {topic}
       <span className="ticker-dot" aria-hidden="true">
-        ·
+        Â·
       </span>
     </span>
   ));
@@ -191,21 +247,192 @@ function Ticker() {
   );
 }
 
-function App() {
+function SiteMasthead({ isQuantum = false }: { isQuantum?: boolean }) {
+  return (
+    <header className="masthead">
+      <a className="masthead-item masthead-link" href="/">
+        Sara Aminpour
+      </a>
+      <a
+        className="masthead-item masthead-center masthead-link"
+        href={isQuantum ? "/" : "/quantum/"}
+      >
+        {isQuantum ? "Portfolio" : "Quantum primer / Hybrid QML / Pure QML"}
+      </a>
+      <span className="masthead-item masthead-right">
+        Vol. 01 Ã¢â‚¬â€ Norman, Oklahoma
+      </span>
+    </header>
+  );
+}
+
+function QuantumDiagram() {
+  return (
+    <div className="quantum-diagram" aria-label="Simplified quantum calculation diagram">
+      <div className="qubit-card">
+        <span>|0&gt;</span>
+        <span className="qubit-plus">+</span>
+        <span>|1&gt;</span>
+      </div>
+      <div className="circuit-lines" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="gate-stack" aria-hidden="true">
+        <span>H</span>
+        <span>U(theta)</span>
+        <span>M</span>
+      </div>
+    </div>
+  );
+}
+
+function QuantumPrimerPage() {
+  return (
+    <>
+      <ScrollProgress />
+      <div className="backdrop quantum-backdrop" aria-hidden="true" />
+      <SiteMasthead isQuantum />
+
+      <main className="quantum-main">
+        <section className="quantum-hero" aria-label="Quantum primer introduction">
+          <div className="quantum-hero-copy">
+            <p className="hero-eyebrow rise" style={{ animationDelay: "80ms" }}>
+              A beginner-friendly branch
+            </p>
+            <h1 className="quantum-title">
+              <span className="line">
+                <span className="rise" style={{ animationDelay: "160ms" }}>
+                  Quantum
+                </span>
+              </span>
+              <span className="line">
+                <span className="rise hero-name-italic" style={{ animationDelay: "280ms" }}>
+                  computing
+                </span>
+              </span>
+              <span className="line">
+                <span className="rise" style={{ animationDelay: "400ms" }}>
+                  from zero
+                </span>
+              </span>
+            </h1>
+            <p className="quantum-lede rise" style={{ animationDelay: "520ms" }}>
+              This guide is for curious readers with no physics background. It
+              explains what quantum computers are, how a quantum calculation is
+              built, why hybrid quantum machine learning mixes two kinds of
+              hardware, and what fully quantum learning would mean.
+            </p>
+            <div className="hero-actions rise" style={{ animationDelay: "620ms" }}>
+              <a className="btn btn-solid" href="#what-is-quantum">
+                Start reading
+              </a>
+              <a className="btn" href="/">
+                Back to portfolio
+              </a>
+            </div>
+          </div>
+          <QuantumDiagram />
+        </section>
+
+        <section className="learning-sheet" id="what-is-quantum">
+          <SectionHead no="Q1" name="What quantum computing is" />
+          <Reveal as="h2" className="sec-title" delay={60}>
+            A quantum computer is not just a faster laptop.
+          </Reveal>
+          <Reveal as="p" className="sec-body" delay={120}>
+            It is a machine that uses quantum states as part of the calculation.
+            Instead of only storing definite 0s and 1s, it can prepare qubits
+            with amplitudes, combine qubits through entanglement, and use
+            interference to make some outcomes stronger and others weaker.
+          </Reveal>
+          <div className="concept-grid">
+            {quantumBasics.map((item, i) => (
+              <Reveal as="article" className="concept-card" key={item.label} delay={i * 80}>
+                <span className="concept-label">{item.label}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </Reveal>
+            ))}
+          </div>
+
+          <div className="calculation-panel">
+            <Reveal className="calculation-copy">
+              <h3>How a quantum calculation happens</h3>
+              <p>
+                Quantum programs are usually drawn as circuits. Time moves from
+                left to right. Each wire is a qubit. Each box is a gate that
+                changes the quantum state. At the end, measurements turn the
+                quantum state into ordinary bits we can read.
+              </p>
+            </Reveal>
+            <ol className="calculation-steps">
+              {calculationSteps.map((step, i) => (
+                <Reveal as="li" key={step} delay={i * 70}>
+                  <span>{String(i + 1).padStart(2, "0")}</span>
+                  {step}
+                </Reveal>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="learning-sheet" id="hybrid-qml">
+          <SectionHead no="Q2" name="Hybrid quantum machine learning" />
+          <Reveal as="h2" className="sec-title" delay={60}>
+            Hybrid means the learning loop is shared.
+          </Reveal>
+          <Reveal as="p" className="sec-body" delay={120}>
+            In hybrid quantum machine learning, a classical computer and a
+            quantum processor cooperate. The quantum circuit is part of the
+            model, but the training loop still depends on classical storage,
+            classical loss calculations, and classical parameter updates.
+          </Reveal>
+          <div className="hybrid-loop">
+            {hybridSteps.map((item, i) => (
+              <Reveal as="article" className="hybrid-card" key={item.title} delay={i * 90}>
+                <span className="concept-label">{item.side}</span>
+                <h3>{item.title}</h3>
+                <p>{item.body}</p>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        <section className="learning-sheet" id="pure-qml">
+          <SectionHead no="Q3" name="Pure quantum machine learning" />
+          <Reveal as="h2" className="sec-title" delay={60}>
+            Fully quantum learning moves the main work onto quantum hardware.
+          </Reveal>
+          <Reveal as="p" className="sec-body" delay={120}>
+            Pure quantum machine learning is the idea that the data
+            representation, learning transformation, and inference procedure are
+            carried out as quantum operations. A classical machine may still
+            launch the experiment and read the result, but it is no longer
+            steering every training step as the central optimizer.
+          </Reveal>
+          <div className="pure-list">
+            {pureQuantumNotes.map((note, i) => (
+              <Reveal as="article" className="pure-note" key={note} delay={i * 80}>
+                <span>{String(i + 1).padStart(2, "0")}</span>
+                <p>{note}</p>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      </main>
+    </>
+  );
+}
+
+function HomePage() {
   return (
     <>
       <ScrollProgress />
       <div className="backdrop" aria-hidden="true" />
 
-      <header className="masthead">
-        <span className="masthead-item">Sara Aminpour</span>
-        <span className="masthead-item masthead-center">
-          Quantum Computing · Artificial Intelligence · Cybersecurity
-        </span>
-        <span className="masthead-item masthead-right">
-          Vol. 01 — Norman, Oklahoma
-        </span>
-      </header>
+      <SiteMasthead />
 
       <main>
         <section className="hero" aria-label="Introduction">
@@ -255,7 +482,7 @@ function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                LinkedIn ↗
+                LinkedIn â†—
               </a>
             </div>
           </div>
@@ -269,7 +496,7 @@ function App() {
               />
             </div>
             <figcaption className="plate-caption">
-              Fig. 01 — The author. Norman, Oklahoma, 2026.
+              Fig. 01 â€” The author. Norman, Oklahoma, 2026.
             </figcaption>
           </figure>
         </section>
@@ -290,7 +517,7 @@ function App() {
               when does a qubit actually earn its keep?
             </Reveal>
             <Reveal as="p" className="index-terms" delay={180}>
-              <em>Index terms</em> — {indexTerms.join("; ")}.
+              <em>Index terms</em> â€” {indexTerms.join("; ")}.
             </Reveal>
           </section>
 
@@ -317,7 +544,7 @@ function App() {
                 <Reveal as="li" className="ref" key={pub.title} delay={i * 70}>
                   <span className="ref-no">[{i + 1}]</span>
                   <span className="ref-body">
-                    S. Aminpour et al., “{pub.title}.”{" "}
+                    S. Aminpour et al., â€œ{pub.title}.â€{" "}
                     <em className="ref-venue">{pub.venue}</em>,{" "}
                     <span className="ref-year">{pub.year}</span>.
                   </span>
@@ -340,7 +567,7 @@ function App() {
               </a>
             </Reveal>
             <Reveal as="p" className="outro-affil" delay={220}>
-              University of Oklahoma — INQUIRE Laboratory
+              University of Oklahoma â€” INQUIRE Laboratory
             </Reveal>
           </div>
 
@@ -352,14 +579,14 @@ function App() {
                 className="sticker-image"
               />
               <figcaption className="plate-caption">
-                Fig. 02 — The author, several experiments earlier.
+                Fig. 02 â€” The author, several experiments earlier.
               </figcaption>
             </figure>
           </Reveal>
         </section>
 
         <footer className="colophon">
-          <span>© 2026 Sara Aminpour</span>
+          <span>Â© 2026 Sara Aminpour</span>
           <span className="colophon-center">
             Typeset in Fraunces, Newsreader &amp; Spline Sans Mono
           </span>
@@ -368,6 +595,11 @@ function App() {
       </main>
     </>
   );
+}
+
+function App() {
+  const isQuantumPage = window.location.pathname.startsWith("/quantum");
+  return isQuantumPage ? <QuantumPrimerPage /> : <HomePage />;
 }
 
 createRoot(document.getElementById("root")!).render(

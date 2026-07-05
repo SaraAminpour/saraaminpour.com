@@ -1,0 +1,3 @@
+/quantum /index.html 200
+/quantum/ /index.html 200
+/quantum/* /index.html 200

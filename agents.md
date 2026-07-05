@@ -29,6 +29,7 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - Desktop and mobile layout checks passed in the in-app browser; desktop portrait rail remains sticky while content scrolls, and mobile has no horizontal overflow.
 - Deployment setup commit: `940da2d` (`Use Cloudflare zone domain`).
 - Real portrait source copied unchanged into the site at `public/saraaminpour.JPG`.
+- Quantum education sub-site added locally at `/quantum/`; it explains quantum computing basics, hybrid quantum machine learning, and pure quantum machine learning for beginners.
 
 ## Website Implementation
 
@@ -42,8 +43,10 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
   - `src/main.tsx`
   - `src/styles.css`
   - `public/saraaminpour.JPG`
+  - `public/_redirects`
   - `.github/workflows/deploy.yml`
   - `scripts/cloudflare-setup.mjs`
+- Routing: `src/main.tsx` switches between the portfolio and the quantum primer using `window.location.pathname.startsWith("/quantum")`. `public/_redirects` maps `/quantum`, `/quantum/`, and `/quantum/*` back to `/index.html` so direct Cloudflare Pages URLs work.
 - The portrait file at `public/saraaminpour.JPG` is the original uploaded image and should remain unchanged.
 - If a generated/background-adjusted derivative is added later, save it as a separate asset and update `src/main.tsx` to use that derivative. Do not overwrite the original portrait.
 
