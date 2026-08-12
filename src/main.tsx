@@ -4,14 +4,14 @@ import "./styles.css";
 
 const experiences = [
   {
-    period: "2025 â€” 2026",
+    period: "2025 - 2026",
     role: "Instructor, Cybersecurity Essential Training Workshop",
     place: "University of Oklahoma, Gallogly College of Engineering",
     details:
       "Led hands-on sessions on quantum cybersecurity, post-quantum cryptography, quantum key distribution, and quantum attack models for professional audiences."
   },
   {
-    period: "2024 â€” present",
+    period: "2024 - present",
     role: "Teaching Assistant",
     place: "University of Oklahoma",
     details:
@@ -29,7 +29,7 @@ const experiences = [
 const publications = [
   {
     title:
-      "Strategic Data Re-Uploads: A Pathway to Improved Quantum Classification â€” Data Re-Uploading Strategies for Improved Quantum Classifier Performance",
+      "Strategic Data Re-Uploads: A Pathway to Improved Quantum Classification - Data Re-Uploading Strategies for Improved Quantum Classifier Performance",
     venue: "Entropy",
     year: "2026"
   },
@@ -251,7 +251,7 @@ function Reveal({ children, className = "", delay = 0, as = "div" }: RevealProps
 function SectionHead({ no, name }: { no: string; name: string }) {
   return (
     <Reveal className="sec-head" as="header">
-      <span className="sec-no">Â§ {no}</span>
+      <span className="sec-no">No. {no}</span>
       <span className="sec-rule" aria-hidden="true" />
       <span className="sec-name">{name}</span>
     </Reveal>
@@ -263,7 +263,7 @@ function Ticker() {
     <span className="ticker-item" key={i}>
       {topic}
       <span className="ticker-dot" aria-hidden="true">
-        Â·
+        /
       </span>
     </span>
   ));
@@ -291,7 +291,7 @@ function SiteMasthead({ isQuantum = false }: { isQuantum?: boolean }) {
         {isQuantum ? "Portfolio" : "Quantum primer / Hybrid QML / Pure QML"}
       </a>
       <span className="masthead-item masthead-right">
-        Vol. 01 Ã¢â‚¬â€ Norman, Oklahoma
+        Vol. 01 / Norman, Oklahoma
       </span>
     </header>
   );
@@ -513,7 +513,7 @@ function HomePage() {
                 target="_blank"
                 rel="noreferrer"
               >
-                LinkedIn â†—
+                LinkedIn
               </a>
               <a
                 className="btn"
@@ -535,7 +535,7 @@ function HomePage() {
               />
             </div>
             <figcaption className="plate-caption">
-              Fig. 01 â€” The author. Norman, Oklahoma, 2026.
+              Fig. 01 - The author. Norman, Oklahoma, 2026.
             </figcaption>
           </figure>
         </section>
@@ -556,7 +556,7 @@ function HomePage() {
               when does a qubit actually earn its keep?
             </Reveal>
             <Reveal as="p" className="index-terms" delay={180}>
-              <em>Index terms</em> â€” {indexTerms.join("; ")}.
+              <em>Index terms</em> - {indexTerms.join("; ")}.
             </Reveal>
           </section>
 
@@ -583,7 +583,7 @@ function HomePage() {
                 <Reveal as="li" className="ref" key={pub.title} delay={i * 70}>
                   <span className="ref-no">[{i + 1}]</span>
                   <span className="ref-body">
-                    S. Aminpour et al., â€œ{pub.title}.â€{" "}
+                    S. Aminpour et al., "{pub.title}."{" "}
                     <em className="ref-venue">{pub.venue}</em>,{" "}
                     <span className="ref-year">{pub.year}</span>.
                   </span>
@@ -630,7 +630,7 @@ function HomePage() {
               </a>
             </Reveal>
             <Reveal as="p" className="outro-affil" delay={220}>
-              University of Oklahoma â€” INQUIRE Laboratory
+              University of Oklahoma - INQUIRE Laboratory
             </Reveal>
           </div>
 
@@ -642,14 +642,14 @@ function HomePage() {
                 className="sticker-image"
               />
               <figcaption className="plate-caption">
-                Fig. 02 â€” The author, several experiments earlier.
+                Fig. 02 - The author, several experiments earlier.
               </figcaption>
             </figure>
           </Reveal>
         </section>
 
         <footer className="colophon">
-          <span>Â© 2026 Sara Aminpour</span>
+          <span>(c) 2026 Sara Aminpour</span>
           <span className="colophon-center">
             Typeset in Fraunces, Newsreader &amp; Spline Sans Mono
           </span>
