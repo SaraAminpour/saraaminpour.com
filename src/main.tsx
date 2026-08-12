@@ -458,6 +458,8 @@ function QuantumPrimerPage() {
 }
 
 function HomePage() {
+  const [newsOpen, setNewsOpen] = useState(false);
+
   return (
     <>
       <ScrollProgress />
@@ -494,7 +496,7 @@ function HomePage() {
             <div
               className="hero-actions rise"
               style={{ animationDelay: "540ms" }}
-              aria-label="Primary links"
+              aria-label="Primary links and news"
             >
               <a className="btn btn-solid" href="mailto:sara.aminpour@ou.edu">
                 Write to me
@@ -523,6 +525,39 @@ function HomePage() {
               >
                 Scholar
               </a>
+              <button
+                className="btn news-toggle"
+                type="button"
+                aria-expanded={newsOpen}
+                aria-controls="hero-news"
+                onClick={() => setNewsOpen((open) => !open)}
+              >
+                News
+                <span className="news-toggle-mark" aria-hidden="true">
+                  {newsOpen ? "-" : "+"}
+                </span>
+              </button>
+            </div>
+            <div
+              id="hero-news"
+              className="hero-news-panel"
+              role="region"
+              aria-label="News and awards"
+              hidden={!newsOpen}
+            >
+              {newsItems.map((item) => (
+                <article
+                  className="hero-news-card"
+                  key={`${item.title}-${item.term}-${item.year}`}
+                >
+                  <div className="hero-news-meta">
+                    <span>{item.kind}</span>
+                    <time dateTime={item.year}>{item.term} {item.year}</time>
+                  </div>
+                  <h2>{item.title}</h2>
+                  <p>{item.source}</p>
+                </article>
+              ))}
             </div>
           </div>
 
@@ -592,34 +627,11 @@ function HomePage() {
             </ol>
           </section>
 
-          <section id="news" className="sec">
-            <SectionHead no="04" name="News" />
-            <Reveal as="h2" className="sec-title news-title" delay={60}>
-              Awards and research milestones.
-            </Reveal>
-            <div className="news-grid">
-              {newsItems.map((item, i) => (
-                <Reveal
-                  as="article"
-                  className="news-card"
-                  key={`${item.title}-${item.term}-${item.year}`}
-                  delay={i * 80}
-                >
-                  <div className="news-card-meta">
-                    <span>{item.kind}</span>
-                    <time dateTime={item.year}>{item.term} {item.year}</time>
-                  </div>
-                  <h3>{item.title}</h3>
-                  <p>{item.source}</p>
-                </Reveal>
-              ))}
-            </div>
-          </section>
         </div>
 
         <section id="correspondence" className="outro">
           <div className="outro-copy">
-            <SectionHead no="05" name="Correspondence" />
+            <SectionHead no="04" name="Correspondence" />
             <Reveal as="h2" className="outro-title" delay={80}>
               Open to research conversations, collaborations, and speaking
               opportunities.
