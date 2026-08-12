@@ -59,6 +59,37 @@ const publications = [
   }
 ];
 
+const newsItems = [
+  {
+    term: "Fall",
+    year: "2026",
+    title: "GSS Research Award",
+    source: "Graduate Student Senate, University of Oklahoma",
+    kind: "Research award"
+  },
+  {
+    term: "Spring",
+    year: "2026",
+    title: "ECE Travel Award",
+    source: "Electrical and Computer Engineering, University of Oklahoma",
+    kind: "Travel award"
+  },
+  {
+    term: "Fall",
+    year: "2025",
+    title: "GCoE Travel Award",
+    source: "Gallogly College of Engineering, University of Oklahoma",
+    kind: "Travel award"
+  },
+  {
+    term: "Fall",
+    year: "2025",
+    title: "GSS Research Award",
+    source: "Graduate Student Senate, University of Oklahoma",
+    kind: "Research award"
+  }
+];
+
 const indexTerms = [
   "quantum computing",
   "Qiskit",
@@ -560,11 +591,35 @@ function HomePage() {
               ))}
             </ol>
           </section>
+
+          <section id="news" className="sec">
+            <SectionHead no="04" name="News" />
+            <Reveal as="h2" className="sec-title news-title" delay={60}>
+              Awards and research milestones.
+            </Reveal>
+            <div className="news-grid">
+              {newsItems.map((item, i) => (
+                <Reveal
+                  as="article"
+                  className="news-card"
+                  key={`${item.title}-${item.term}-${item.year}`}
+                  delay={i * 80}
+                >
+                  <div className="news-card-meta">
+                    <span>{item.kind}</span>
+                    <time dateTime={item.year}>{item.term} {item.year}</time>
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p>{item.source}</p>
+                </Reveal>
+              ))}
+            </div>
+          </section>
         </div>
 
         <section id="correspondence" className="outro">
           <div className="outro-copy">
-            <SectionHead no="04" name="Correspondence" />
+            <SectionHead no="05" name="Correspondence" />
             <Reveal as="h2" className="outro-title" delay={80}>
               Open to research conversations, collaborations, and speaking
               opportunities.

@@ -13,6 +13,7 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - GitHub CLI is authenticated as `SaraAminpour`.
 - GitHub repository created and pushed: `https://github.com/SaraAminpour/saraaminpour.com`.
 - Google Scholar profile linked from the homepage: `https://scholar.google.com/citations?user=75NNTvUAAAAJ&hl=en`.
+- Homepage News section presents the four awards listed in the 2026 CV as editorial cards. Keep award names and dates grounded in the CV; it does not identify which specific conference each travel award funded.
 - Cloudflare API token `saraaminpour-pages-deploy` was created with the following scope:
   - Account `Sarah.aminpoor@gmail.com's Account`: Cloudflare Pages Edit.
   - Zone `sara-aminpour.com`: DNS Edit and Zone Read.
