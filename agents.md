@@ -12,6 +12,7 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - Telegram updates are configured via environment variables and initial updates were sent.
 - GitHub CLI is authenticated as `SaraAminpour`.
 - GitHub repository created and pushed: `https://github.com/SaraAminpour/saraaminpour.com`.
+- Google Scholar profile linked from the homepage: `https://scholar.google.com/citations?user=75NNTvUAAAAJ&hl=en`.
 - Cloudflare API token `saraaminpour-pages-deploy` was created with the following scope:
   - Account `Sarah.aminpoor@gmail.com's Account`: Cloudflare Pages Edit.
   - Zone `sara-aminpour.com`: DNS Edit and Zone Read.

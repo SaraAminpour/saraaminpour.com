@@ -484,6 +484,14 @@ function HomePage() {
               >
                 LinkedIn â†—
               </a>
+              <a
+                className="btn"
+                href="https://scholar.google.com/citations?user=75NNTvUAAAAJ&hl=en"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Scholar
+              </a>
             </div>
           </div>
 
