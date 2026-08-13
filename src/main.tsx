@@ -113,6 +113,110 @@ const tickerTopics = [
   "Quantum cybersecurity"
 ];
 
+type Tale = {
+  id: string;
+  physics: string;
+  storyTitle: string;
+  image: string;
+  alt: string;
+  story: string[];
+  plainly: string;
+  research: string;
+};
+
+const quantumTales: Tale[] = [
+  {
+    id: "superposition",
+    physics: "Superposition",
+    storyTitle: "The coin that hasn't landed",
+    image: "/tales/superposition.png",
+    alt: "Watercolor illustration of a coin spinning above an open palm, blurred between heads and tails",
+    story: [
+      "Flip a coin and clap it onto the back of your hand. Before you peek, you would say it is heads or tails - one of them, you just don't know which. A qubit is stranger than that. While the coin is still spinning in the air, it isn't secretly heads and it isn't secretly tails; it genuinely carries both possibilities at once, each with its own weight. Quantum physics keeps a careful ledger of those weights, and calls them amplitudes.",
+      "The surprise is that the weights can push and pull on each other - cancel out or pile up - like ripples meeting on a pond. That pushing and pulling is called interference, and it is the engine inside every quantum computer: you choreograph the possibilities so that wrong answers cancel themselves out and right answers grow louder."
+    ],
+    plainly:
+      "Before you look, a quantum system holds many weighted possibilities at once - and those weights can be choreographed.",
+    research:
+      "Every qubit in Sara's Qiskit simulations starts life in superposition; a quantum classifier works by steering those weights until the correct label becomes the loudest possibility."
+  },
+  {
+    id: "schrodingers-cat",
+    physics: "Schrodinger's cat",
+    storyTitle: "The cat who was both",
+    image: "/tales/schrodingers-cat.png",
+    alt: "Watercolor illustration of a cat in a box, half awake and half a translucent sleeping ghost",
+    story: [
+      "In 1935, Erwin Schrodinger told a deliberately absurd story. Seal a cat in a box with a tiny quantum trigger: if a single atom decays, a vial breaks and the cat dies; if it does not, the cat naps on. Quantum rules allow the atom to be in a superposition - decayed and not decayed - so, taken literally, the sealed box holds a cat that is asleep and not asleep at the same time. Schrodinger wasn't proposing an experiment; he was teasing his own field: surely this is ridiculous?",
+      "The modern answer is that big, warm things like cats cannot stay in superposition. They constantly leak information into the world - light, heat, jostled air - and every leak acts like a little peek that forces a definite outcome. Physicists call this decoherence. The story survives because it points at the exact question the field still lives on: how do you keep a fragile quantum state un-peeked-at long enough to compute with it?"
+    ],
+    plainly:
+      "The cat dramatizes how measurement and noise force quantum possibilities to settle into one plain fact.",
+    research:
+      "Decoherence is why real quantum hardware is noisy - and why Sara studies which learning tasks a small, imperfect quantum circuit can still do well."
+  },
+  {
+    id: "entanglement",
+    physics: "Entanglement",
+    storyTitle: "Two parcels, one thread",
+    image: "/tales/entanglement.png",
+    alt: "Watercolor illustration of two parcels with mittens, joined by a single long red thread",
+    story: [
+      "Knit a pair of mittens, seal them into two parcels without looking, and mail one to a friend across the ocean. The moment she opens hers and finds the left mitten, she instantly knows yours is the right one. No magic - the answer was settled at the post office.",
+      "Entangled qubits play a deeper version of this game. It is not that the answers were secretly settled in advance: measurements on the pair come out correlated more strongly than any settled-at-the-post-office story can explain. Einstein grumbled about 'spooky action at a distance,' and careful experiments have confirmed it again and again. Entanglement will not let you send messages faster than light - but it is a genuine resource, the connective tissue that lets many qubits behave as one computer instead of a bag of loose coins."
+    ],
+    plainly:
+      "Entangled particles share one joint state, with correlations stronger than any pre-arranged plan could produce.",
+    research:
+      "One of Sara's publications asks exactly when entangled circuits beat single, unentangled qubits at classification - that is, when the spooky thread earns its keep."
+  },
+  {
+    id: "uncertainty",
+    physics: "Heisenberg's uncertainty principle",
+    storyTitle: "The firefly in the jar",
+    image: "/tales/uncertainty.png",
+    alt: "Watercolor illustration of a firefly in a jar under a magnifying glass, its light trail blurred",
+    story: [
+      "Try to photograph a firefly at night. To see where it is, you need light - but light gives it a nudge, and the more sharply you pin down where it is, the more you have blurred where it was going. Heisenberg's uncertainty principle says something even stronger than 'measuring disturbs things': a quantum object simply does not possess a perfectly sharp position and a perfectly sharp momentum at the same time. The two blurs are locked in a trade - squeeze one and the other spreads.",
+      "This is not a complaint about our cameras; it is written into nature's grammar. And it is not always the villain. Uncertainty is part of why atoms don't collapse in on themselves, and it is the raw, honest randomness that quantum cryptography refines into keys no computer can guess."
+    ],
+    plainly:
+      "Nature enforces a trade-off: the more sharply one property is defined, the fuzzier its partner becomes.",
+    research:
+      "Quantum key distribution - which Sara teaches in her cybersecurity workshops - turns this built-in fuzziness into an alarm bell: an eavesdropper cannot look without leaving smudges."
+  },
+  {
+    id: "measurement",
+    physics: "Measurement",
+    storyTitle: "The question that changes the answer",
+    image: "/tales/measurement.png",
+    alt: "Watercolor illustration of an instant camera photographing a soap bubble, the photo showing a single droplet",
+    story: [
+      "A soap bubble drifting across the room is round, shimmering, a little wobbly - many things at once. Photograph it and you get one frozen frame; touch it and you get one droplet. Asking a quantum system a question works the same way: before measurement it holds its whole spread of weighted possibilities, and the act of asking collapses that spread into a single plain answer, chosen at random according to the weights. Ask again and you are questioning a different, already-collapsed thing.",
+      "That is why quantum programs are run not once but thousands of times. Each run hands back one droplet; the pattern of droplets, collected patiently, sketches the shape of the original bubble."
+    ],
+    plainly:
+      "Measurement converts weighted possibilities into one classical fact - so quantum answers arrive as statistics, not certainties.",
+    research:
+      "Sara's classifiers never see 'the quantum state' directly - they see measurement statistics, and the craft lies in making those statistics carry the answer."
+  },
+  {
+    id: "no-cloning",
+    physics: "The no-cloning theorem",
+    storyTitle: "The photocopier that refuses",
+    image: "/tales/no-cloning.png",
+    alt: "Watercolor illustration of an apologetic photocopier with a glowing marble on its glass and a blank page in its tray",
+    story: [
+      "Classical information is endlessly copyable - that is what makes backups, forwarding, and the whole internet possible. So it comes as a shock that quantum information refuses. The no-cloning theorem, proved in 1982, says that no machine can take an unknown quantum state and produce a perfect independent copy of it. This is not an engineering shortfall waiting for a cleverer photocopier; the mathematics of quantum mechanics simply has no room for one. To copy the marble, the machine would have to look at it first - and looking, as we know by now, changes it.",
+      "This stubbornness turns out to be a gift. Because quantum states cannot be secretly duplicated, a quantum key cannot be skimmed by a wiretapper without leaving evidence. The theorem shapes quantum computing too: there are no mid-computation backup copies, which is why quantum error correction is such delicate, brilliant work."
+    ],
+    plainly:
+      "An unknown quantum state cannot be perfectly copied - a law of nature, not a limitation of engineering.",
+    research:
+      "No-cloning is the bedrock of the quantum key distribution and post-quantum cryptography material Sara teaches: security guaranteed by physics rather than by hard math alone."
+  }
+];
+
 const quantumBasics = [
   {
     label: "Classical bit",
@@ -457,8 +561,139 @@ function QuantumPrimerPage() {
   );
 }
 
+function TalesReader({
+  taleIndex,
+  onClose,
+  onSelect
+}: {
+  taleIndex: number;
+  onClose: () => void;
+  onSelect: (index: number) => void;
+}) {
+  const tale = quantumTales[taleIndex];
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const count = quantumTales.length;
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+      if (event.key === "ArrowRight") onSelect((taleIndex + 1) % count);
+      if (event.key === "ArrowLeft") onSelect((taleIndex + count - 1) % count);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [taleIndex, count, onClose, onSelect]);
+
+  return (
+    <div
+      className="tales-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Quantum tales: plain-language quantum physics"
+    >
+      <div className="tales-scrim" onClick={onClose} aria-hidden="true" />
+      <div className="tales-book">
+        <header className="tales-masthead">
+          <span className="tales-masthead-title">
+            A Small Book of Quantum Ideas
+          </span>
+          <span className="tales-masthead-no">
+            Tale {String(taleIndex + 1).padStart(2, "0")} /{" "}
+            {String(count).padStart(2, "0")}
+          </span>
+          <button
+            ref={closeRef}
+            className="tales-close"
+            type="button"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </header>
+        <div className="tales-body">
+          <nav className="tales-toc" aria-label="Contents of the quantum tales">
+            <span className="tales-toc-label">Contents</span>
+            {quantumTales.map((item, i) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`tales-toc-item ${i === taleIndex ? "is-active" : ""}`.trim()}
+                aria-current={i === taleIndex ? "true" : undefined}
+                onClick={() => onSelect(i)}
+              >
+                <span className="tales-toc-no">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span>{item.physics}</span>
+              </button>
+            ))}
+          </nav>
+          <article className="tale" key={tale.id}>
+            <figure className="tale-plate">
+              <div className="tale-plate-frame">
+                <img src={tale.image} alt={tale.alt} />
+              </div>
+              <figcaption>
+                Plate {String(taleIndex + 1).padStart(2, "0")} - {tale.physics}
+              </figcaption>
+            </figure>
+            <div className="tale-text">
+              <p className="tale-eyebrow">{tale.physics}</p>
+              <h2 className="tale-title">{tale.storyTitle}</h2>
+              {tale.story.map((paragraph, i) => (
+                <p
+                  className={i === 0 ? "tale-para tale-para-first" : "tale-para"}
+                  key={i}
+                >
+                  {paragraph}
+                </p>
+              ))}
+              <p className="tale-plainly">
+                <em>The idea, plainly</em> - {tale.plainly}
+              </p>
+              <p className="tale-research">
+                <em>In this portfolio</em> - {tale.research}
+              </p>
+              <div className="tale-nav">
+                <button
+                  type="button"
+                  className="btn btn-ink"
+                  onClick={() => onSelect((taleIndex + count - 1) % count)}
+                >
+                  Previous tale
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ink"
+                  onClick={() => onSelect((taleIndex + 1) % count)}
+                >
+                  Next tale
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HomePage() {
   const [newsOpen, setNewsOpen] = useState(false);
+  const [talesOpen, setTalesOpen] = useState(false);
+  const [taleIndex, setTaleIndex] = useState(0);
 
   return (
     <>
@@ -525,6 +760,16 @@ function HomePage() {
               >
                 Scholar
               </a>
+              <button
+                className="btn tales-toggle"
+                type="button"
+                onClick={() => setTalesOpen(true)}
+              >
+                Quantum tales
+                <span className="tales-toggle-mark" aria-hidden="true">
+                  *
+                </span>
+              </button>
               <button
                 className="btn news-toggle"
                 type="button"
@@ -668,6 +913,14 @@ function HomePage() {
           <span className="colophon-right">Norman, Oklahoma</span>
         </footer>
       </main>
+
+      {talesOpen && (
+        <TalesReader
+          taleIndex={taleIndex}
+          onClose={() => setTalesOpen(false)}
+          onSelect={setTaleIndex}
+        />
+      )}
     </>
   );
 }

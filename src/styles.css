@@ -1022,3 +1022,333 @@ ol {
     transition: none;
   }
 }
+
+/* ---------- quantum tales reader ---------- */
+
+.tales-toggle-mark {
+  margin-left: 8px;
+  color: var(--rose-soft);
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+.tales-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(10px, 3vw, 42px);
+}
+
+.tales-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(48, 46, 56, 0.7);
+  animation: tales-fade 320ms ease both;
+}
+
+.tales-book {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1160px, 100%);
+  height: min(880px, 100%);
+  background: var(--paper);
+  box-shadow:
+    0 50px 110px rgba(16, 15, 20, 0.5),
+    0 8px 26px rgba(16, 15, 20, 0.3);
+  animation: tales-rise 460ms cubic-bezier(0.22, 0.61, 0.2, 1) both;
+  overflow: hidden;
+}
+
+@keyframes tales-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tales-rise {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tales-masthead {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px clamp(18px, 3vw, 34px);
+  border-bottom: 1px solid var(--hair-ink);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tales-masthead-title {
+  color: var(--rose);
+}
+
+.tales-masthead-no {
+  margin-left: auto;
+}
+
+.tales-close {
+  border: 1px solid var(--hair-ink);
+  border-radius: 999px;
+  padding: 7px 16px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 240ms ease, color 240ms ease;
+}
+
+.tales-close:hover,
+.tales-close:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.tales-body {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.tales-toc {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--hair-ink);
+  padding: 20px 0 12px;
+  overflow-y: auto;
+}
+
+.tales-toc-label {
+  padding: 0 22px 12px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tales-toc-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 22px;
+  border: none;
+  border-top: 1px solid var(--hair-ink);
+  background: transparent;
+  text-align: left;
+  font-family: var(--serif-text);
+  font-size: 0.96rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: background 240ms ease, color 240ms ease, box-shadow 240ms ease;
+}
+
+.tales-toc-item:hover {
+  background: rgba(163, 91, 106, 0.06);
+}
+
+.tales-toc-item.is-active {
+  background: rgba(163, 91, 106, 0.1);
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 var(--rose);
+}
+
+.tales-toc-no {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--rose);
+}
+
+.tale {
+  display: grid;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  gap: clamp(24px, 3.5vw, 48px);
+  align-content: start;
+  padding: clamp(24px, 4vw, 48px);
+  overflow-y: auto;
+  animation: tale-in 420ms ease both;
+}
+
+@keyframes tale-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tale-plate {
+  align-self: start;
+}
+
+.tale-plate-frame {
+  padding: clamp(14px, 1.8vw, 22px);
+  background: #faf8f3;
+  border: 1px solid var(--hair-ink);
+  box-shadow: 0 18px 44px rgba(26, 24, 32, 0.14);
+}
+
+.tale-plate-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.tale-plate figcaption {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.tale-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+
+.tale-title {
+  margin-top: 12px;
+  font-family: var(--serif-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(1.7rem, 2.8vw, 2.5rem);
+  line-height: 1.08;
+  color: var(--ink);
+}
+
+.tale-para {
+  margin-top: 18px;
+  font-size: 1.06rem;
+  line-height: 1.76;
+  color: var(--ink-soft);
+}
+
+.tale-para-first::first-letter {
+  float: left;
+  padding: 0.08em 0.12em 0 0;
+  font-family: var(--serif-display);
+  font-size: 3.1em;
+  line-height: 0.82;
+  color: var(--rose);
+}
+
+.tale-plainly {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--hair-ink);
+  font-size: 1.02rem;
+  line-height: 1.66;
+  color: var(--ink);
+}
+
+.tale-plainly em,
+.tale-research em {
+  font-style: normal;
+  color: var(--rose);
+}
+
+.tale-research {
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.8;
+  color: var(--muted);
+}
+
+.tale-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.btn-ink {
+  border-color: var(--hair-ink);
+  color: var(--ink);
+  cursor: pointer;
+  background: transparent;
+}
+
+.btn-ink:hover,
+.btn-ink:focus-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+@media (max-width: 900px) {
+  .tales-body {
+    grid-template-columns: 1fr;
+  }
+
+  .tales-toc {
+    flex-direction: row;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--hair-ink);
+    padding: 10px 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .tales-toc-label {
+    display: none;
+  }
+
+  .tales-toc-item {
+    width: auto;
+    border-top: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    white-space: nowrap;
+    font-size: 0.88rem;
+  }
+
+  .tales-toc-item.is-active {
+    box-shadow: inset 0 0 0 1px var(--rose);
+  }
+
+  .tale {
+    grid-template-columns: 1fr;
+  }
+
+  .tale-plate {
+    max-width: 340px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tales-scrim,
+  .tales-book,
+  .tale {
+    animation: none;
+  }
+}
