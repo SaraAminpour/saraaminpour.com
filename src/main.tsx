@@ -90,6 +90,15 @@ const newsItems = [
   }
 ];
 
+type GalleryItem = {
+  src: string;
+  caption: string;
+};
+
+// To add photographs: drop image files into public/gallery/ and list them
+// here, e.g. { src: "/gallery/defense-day.jpg", caption: "Defense day, 2026." }
+const galleryItems: GalleryItem[] = [];
+
 const indexTerms = [
   "quantum computing",
   "Qiskit",
@@ -872,11 +881,38 @@ function HomePage() {
             </ol>
           </section>
 
+          <section id="gallery" className="sec">
+            <SectionHead no="04" name="Gallery" />
+            {galleryItems.length === 0 ? (
+              <Reveal as="p" className="gallery-empty" delay={80}>
+                Plates forthcoming - photographs are being selected for this
+                wall.
+              </Reveal>
+            ) : (
+              <div className="gallery-grid">
+                {galleryItems.map((item, i) => (
+                  <Reveal
+                    as="figure"
+                    className="gallery-plate"
+                    key={item.src}
+                    delay={i * 70}
+                  >
+                    <div className="gallery-plate-frame">
+                      <img src={item.src} alt={item.caption} loading="lazy" />
+                    </div>
+                    <figcaption>
+                      Plate {String(i + 1).padStart(2, "0")} - {item.caption}
+                    </figcaption>
+                  </Reveal>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
         <section id="correspondence" className="outro">
           <div className="outro-copy">
-            <SectionHead no="04" name="Correspondence" />
+            <SectionHead no="05" name="Correspondence" />
             <Reveal as="h2" className="outro-title" delay={80}>
               Open to research conversations, collaborations, and speaking
               opportunities.
