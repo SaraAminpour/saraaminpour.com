@@ -1369,9 +1369,10 @@ ol {
 
 .gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: clamp(20px, 3vw, 36px);
   margin-top: 40px;
+  align-items: start;
 }
 
 .gallery-plate {
@@ -1394,17 +1395,30 @@ ol {
 .gallery-plate-frame img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  height: auto;
 }
 
 .gallery-plate figcaption {
   margin-top: 11px;
+}
+
+.gallery-caption-head {
+  display: block;
   font-family: var(--mono);
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   line-height: 1.6;
   color: var(--muted);
+}
+
+.gallery-caption-detail {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--serif-text);
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

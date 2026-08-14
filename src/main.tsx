@@ -93,11 +93,19 @@ const newsItems = [
 type GalleryItem = {
   src: string;
   caption: string;
+  detail?: string;
 };
 
 // To add photographs: drop image files into public/gallery/ and list them
-// here, e.g. { src: "/gallery/defense-day.jpg", caption: "Defense day, 2026." }
-const galleryItems: GalleryItem[] = [];
+// here. caption is the short plate title; detail is an optional longer note.
+const galleryItems: GalleryItem[] = [
+  {
+    src: "/gallery/spie-west-jan-2026.jpg",
+    caption: "SPIE West - Jan 2026",
+    detail:
+      "Sara Aminpour is presenting her conference paper on Learning with a Single Qubit: Classical Training of Quantum-Inspired Classifiers for Structured Tasks."
+  }
+];
 
 const indexTerms = [
   "quantum computing",
@@ -769,6 +777,16 @@ function HomePage() {
               >
                 Scholar
               </a>
+              <a
+                className="btn"
+                href="#gallery"
+                onClick={(event) => {
+                  event.preventDefault();
+                  document.getElementById("gallery")?.scrollIntoView();
+                }}
+              >
+                Gallery
+              </a>
               <button
                 className="btn tales-toggle"
                 type="button"
@@ -901,7 +919,14 @@ function HomePage() {
                       <img src={item.src} alt={item.caption} loading="lazy" />
                     </div>
                     <figcaption>
-                      Plate {String(i + 1).padStart(2, "0")} - {item.caption}
+                      <span className="gallery-caption-head">
+                        Plate {String(i + 1).padStart(2, "0")} - {item.caption}
+                      </span>
+                      {item.detail && (
+                        <span className="gallery-caption-detail">
+                          {item.detail}
+                        </span>
+                      )}
                     </figcaption>
                   </Reveal>
                 ))}
