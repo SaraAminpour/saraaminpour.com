@@ -99,16 +99,17 @@ type GalleryItem = {
 // To add photographs: drop image files into public/gallery/ and list them
 // here. caption is the short plate title; detail is an optional longer note.
 const galleryItems: GalleryItem[] = [
-  // Pending: podium photo of the talk itself, to be added as the first plate
-  // once the file is saved to public/gallery/, with the detail:
-  // "On stage at SPIE Photonics West, presenting Learning with a Single
-  // Qubit: Classical Training of Quantum-Inspired Classifiers for
-  // Structured Tasks."
   {
     src: "/gallery/spie-west-jan-2026.jpg",
     caption: "SPIE West - Jan 2026",
     detail:
       "Presenter badge on, at the SPIE Photonics West wall in San Francisco, where Sara presented her conference paper Learning with a Single Qubit: Classical Training of Quantum-Inspired Classifiers for Structured Tasks."
+  },
+  {
+    src: "/gallery/spie-west-presenting-jan-2026.jpg",
+    caption: "SPIE West - Jan 2026",
+    detail:
+      "On stage at SPIE Photonics West, presenting Learning with a Single Qubit: Classical Training of Quantum-Inspired Classifiers for Structured Tasks."
   }
 ];
 
