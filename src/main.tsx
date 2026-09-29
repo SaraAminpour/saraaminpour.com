@@ -113,6 +113,49 @@ const galleryItems: GalleryItem[] = [
   }
 ];
 
+type Project = {
+  slug: string;
+  name: string;
+  tagline: string;
+  year: string;
+  kind: string;
+  image: string;
+  imageAlt: string;
+  caption: string;
+  description: string;
+  stack: string[];
+  href: string;
+  tryHref: string;
+};
+
+const projects: Project[] = [
+  {
+    slug: "sepia",
+    name: "Sepia",
+    tagline: "an infinite sketchbook for Apple Pencil",
+    year: "2026",
+    kind: "Web app / iPad and desktop",
+    image: "/projects/sepia.jpg",
+    imageAlt:
+      "Sepia whiteboard showing handwritten reading notes on data re-uploading: an index card with an equation, sticky notes, a small flowchart circled in ink, and hand-drawn stickers.",
+    caption: "Sepia in use, reading notes on data re-uploading.",
+    description:
+      "A warm, pen-first whiteboard that runs in the browser and installs on an iPad like an app. It has pressure-sensitive pens, a highlighter and an eraser; rough strokes snap into clean lines and shapes when the Pencil is held still, and a quick scribble erases ink. Sticky notes, markdown index cards with checklists, LaTeX and [[links]] between boards, watercolor stickers and frames that turn into slides sit on one endless canvas. Anyone can create an account, and boards sync live between devices and still open offline.",
+    stack: [
+      "TypeScript",
+      "React",
+      "SVG",
+      "perfect-freehand",
+      "rough.js",
+      "Cloudflare Workers",
+      "Durable Objects",
+      "D1"
+    ],
+    href: "https://sepia.sara-aminpour.com",
+    tryHref: "https://sepia.sara-aminpour.com/welcome"
+  }
+];
+
 const indexTerms = [
   "quantum computing",
   "Qiskit",
@@ -785,6 +828,16 @@ function HomePage() {
               </a>
               <a
                 className="btn"
+                href="#projects"
+                onClick={(event) => {
+                  event.preventDefault();
+                  document.getElementById("projects")?.scrollIntoView();
+                }}
+              >
+                Projects
+              </a>
+              <a
+                className="btn"
                 href="#gallery"
                 onClick={(event) => {
                   event.preventDefault();
@@ -905,8 +958,60 @@ function HomePage() {
             </ol>
           </section>
 
+          <section id="projects" className="sec">
+            <SectionHead no="04" name="Projects" />
+            <Reveal as="h2" className="sec-title" delay={60}>
+              Things I build between experiments.
+            </Reveal>
+            <div className="projects">
+              {projects.map((project, i) => (
+                <Reveal as="article" className="project" key={project.slug} delay={i * 90}>
+                  <figure className="project-figure">
+                    <a
+                      className="project-plate"
+                      href={project.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Open ${project.name}`}
+                    >
+                      <img src={project.image} alt={project.imageAlt} loading="lazy" />
+                    </a>
+                    <figcaption className="project-caption">
+                      Proj. {String(i + 1).padStart(2, "0")} - {project.caption}
+                    </figcaption>
+                  </figure>
+                  <div className="project-copy">
+                    <div className="project-intro">
+                      <p className="project-meta">
+                        {project.year} / {project.kind}
+                      </p>
+                      <h3 className="project-name">
+                        {project.name}
+                        <em>{project.tagline}</em>
+                      </h3>
+                      <div className="project-actions">
+                        <a className="btn btn-ink btn-ink-solid" href={project.href} target="_blank" rel="noreferrer">
+                          Open {project.name}
+                        </a>
+                        <a className="btn btn-ink" href={project.tryHref} target="_blank" rel="noreferrer">
+                          Try it without an account
+                        </a>
+                      </div>
+                    </div>
+                    <div className="project-text">
+                      <p className="project-body">{project.description}</p>
+                      <p className="index-terms project-stack">
+                        <em>Built with</em> - {project.stack.join("; ")}.
+                      </p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+
           <section id="gallery" className="sec">
-            <SectionHead no="04" name="Gallery" />
+            <SectionHead no="05" name="Gallery" />
             {galleryItems.length === 0 ? (
               <Reveal as="p" className="gallery-empty" delay={80}>
                 Plates forthcoming - photographs are being selected for this
@@ -943,7 +1048,7 @@ function HomePage() {
 
         <section id="correspondence" className="outro">
           <div className="outro-copy">
-            <SectionHead no="05" name="Correspondence" />
+            <SectionHead no="06" name="Correspondence" />
             <Reveal as="h2" className="outro-title" delay={80}>
               Open to research conversations, collaborations, and speaking
               opportunities.
