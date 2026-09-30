@@ -153,6 +153,30 @@ const projects: Project[] = [
     ],
     href: "https://sepia.sara-aminpour.com",
     tryHref: "https://sepia.sara-aminpour.com/welcome"
+  },
+  {
+    slug: "ponder",
+    name: "Ponder",
+    tagline: "ten minutes a day for your own brain",
+    year: "2026",
+    kind: "Web app / phone, tablet and desktop",
+    image: "/projects/ponder.jpg",
+    imageAlt:
+      "Ponder's Star Trails puzzle, solved: nine glowing stars joined by four straight lines whose corners leave the square of stars, beside a card explaining the idea and a short note written in the player's own words.",
+    caption: "Ponder after the nine-stars puzzle: the trail has to leave the box.",
+    description:
+      "A daily thinking practice with no AI in it. Three puzzle families exercise three ways of thinking: Look-alikes (cut a shape into pieces that all match), Star Trails (join every star with as few straight lines as you can) and Odd Coin (find the fake on a balance scale that answers as unhelpfully as it is allowed to, so luck cannot solve it). Each family has a short ladder of hand-picked puzzles and then endless fresh ones, every one generated so that a solution is guaranteed to exist. Hints are questions, never answers; thinking time only counts while you are really there; and a note in your own words after each solve builds a private journal. It is free, installs on a phone or tablet, works offline, and with a free account your progress syncs between devices.",
+    stack: [
+      "TypeScript",
+      "React",
+      "SVG",
+      "Seeded puzzle generators",
+      "Exact solvers",
+      "Cloudflare Workers",
+      "D1"
+    ],
+    href: "https://ponder.sara-aminpour.com",
+    tryHref: "https://ponder.sara-aminpour.com/today"
   }
 ];
 
