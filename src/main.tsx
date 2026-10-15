@@ -208,6 +208,97 @@ const projects: Project[] = [
   }
 ];
 
+type HeroLink = {
+  id: string;
+  label: string;
+  sub: string;
+  href: string;
+  icon: keyof typeof linkIcons;
+};
+
+// Small line icons drawn for the hero link list; the rose strokes are the "cute" accents.
+const linkIcons = {
+  mail: (
+    <svg viewBox="0 0 24 24">
+      <rect x="3" y="5.5" width="18" height="13" rx="2.5" />
+      <path d="M3.8 7.2 12 13l8.2-5.8" />
+      <path className="accent-fill" d="M12 17.3c-1.7-1-2.5-1.9-2.5-2.8a1.25 1.25 0 0 1 2.5-.35 1.25 1.25 0 0 1 2.5.35c0 .9-.8 1.8-2.5 2.8z" />
+    </svg>
+  ),
+  cv: (
+    <svg viewBox="0 0 24 24">
+      <path d="M14 3H7.5A1.5 1.5 0 0 0 6 4.5v15A1.5 1.5 0 0 0 7.5 21h9a1.5 1.5 0 0 0 1.5-1.5V7z" />
+      <path d="M14 3v4h4" />
+      <circle className="accent-fill" cx="9.6" cy="8.2" r="1.5" />
+      <path d="M9 12h6M9 15h6M9 18h3.5" />
+    </svg>
+  ),
+  linkedin: (
+    <svg viewBox="0 0 24 24">
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+      <path d="M8.2 11v5.6" />
+      <circle className="accent-fill" cx="8.2" cy="7.9" r="1.15" />
+      <path d="M11.8 16.6V11M11.8 13.6a2.4 2.4 0 0 1 4.8 0v3" />
+    </svg>
+  ),
+  scholar: (
+    <svg viewBox="0 0 24 24">
+      <path d="M2.5 9.5 12 5l9.5 4.5L12 14z" />
+      <path d="M6.5 11.6v3.9c0 1.3 2.5 2.6 5.5 2.6s5.5-1.3 5.5-2.6v-3.9" />
+      <path className="accent" d="M21.5 9.5v4.6" />
+      <circle className="accent-fill" cx="21.5" cy="15.4" r="1.2" />
+    </svg>
+  ),
+  github: (
+    <svg viewBox="0 0 24 24">
+      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+      <path className="accent" d="M9 18c-4.51 2-5-2-7-2" />
+    </svg>
+  ),
+  projects: (
+    <svg viewBox="0 0 24 24">
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <path d="M3 8.6h18" />
+      <circle className="accent-fill" cx="5.9" cy="6.6" r=".9" />
+      <circle className="accent-fill" cx="8.4" cy="6.6" r=".9" />
+      <path d="m10.2 11.6-2.2 2.3 2.2 2.3M13.8 11.6l2.2 2.3-2.2 2.3" />
+    </svg>
+  ),
+  gallery: (
+    <svg viewBox="0 0 24 24">
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <path d="m3.8 17.2 5-5 4 4 2.4-2.4 5 5" />
+      <circle className="accent-fill" cx="15.6" cy="9" r="1.7" />
+    </svg>
+  ),
+  tales: (
+    <svg viewBox="0 0 24 24">
+      <ellipse cx="12" cy="12" rx="9.6" ry="3.9" transform="rotate(45 12 12)" />
+      <ellipse cx="12" cy="12" rx="9.6" ry="3.9" transform="rotate(-45 12 12)" />
+      <circle className="accent-fill" cx="12" cy="12" r="1.9" />
+    </svg>
+  ),
+  news: (
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="9.4" r="5.9" />
+      <path d="m8.7 14.4-1.5 6.8 4.8-2.4 4.8 2.4-1.5-6.8" />
+      <path className="accent-fill" d="m12 6.6.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 8.7l2-.3z" />
+    </svg>
+  )
+};
+
+const heroLinks: HeroLink[] = [
+  { id: "mail", label: "Write to me", sub: "sara.aminpour@ou.edu", href: "mailto:sara.aminpour@ou.edu", icon: "mail" },
+  { id: "cv", label: "Curriculum vitae", sub: "PDF, 2026", href: "/Sara_Aminpour_Resume_2026.pdf", icon: "cv" },
+  { id: "linkedin", label: "LinkedIn", sub: "sara-aminpour", href: "https://www.linkedin.com/in/sara-aminpour/", icon: "linkedin" },
+  { id: "scholar", label: "Scholar", sub: "Publications", href: "https://scholar.google.com/citations?user=75NNTvUAAAAJ&hl=en", icon: "scholar" },
+  { id: "github", label: "GitHub", sub: "@SaraAminpour", href: "https://github.com/SaraAminpour", icon: "github" },
+  { id: "projects", label: "Projects", sub: "Things I build", href: "#projects", icon: "projects" },
+  { id: "gallery", label: "Gallery", sub: "Photographs", href: "#gallery", icon: "gallery" },
+  { id: "tales", label: "Quantum tales", sub: "Six illustrated stories", href: "", icon: "tales" },
+  { id: "news", label: "News", sub: "Awards and updates", href: "", icon: "news" }
+];
+
 const indexTerms = [
   "quantum computing",
   "Qiskit",
@@ -846,81 +937,75 @@ function HomePage() {
               University of Oklahoma, working where quantum computing,
               artificial intelligence, and cybersecurity meet.
             </p>
-            <div
-              className="hero-actions rise"
+            <ul
+              className="hero-links rise"
               style={{ animationDelay: "540ms" }}
-              aria-label="Primary links and news"
+              aria-label="Links and news"
             >
-              <a className="btn btn-solid" href="mailto:sara.aminpour@ou.edu">
-                Write to me
-              </a>
-              <a
-                className="btn"
-                href="/Sara_Aminpour_Resume_2026.pdf"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Curriculum vitae
-              </a>
-              <a
-                className="btn"
-                href="https://www.linkedin.com/in/sara-aminpour/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                LinkedIn
-              </a>
-              <a
-                className="btn"
-                href="https://scholar.google.com/citations?user=75NNTvUAAAAJ&hl=en"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Scholar
-              </a>
-              <a
-                className="btn"
-                href="#projects"
-                onClick={(event) => {
-                  event.preventDefault();
-                  document.getElementById("projects")?.scrollIntoView();
-                }}
-              >
-                Projects
-              </a>
-              <a
-                className="btn"
-                href="#gallery"
-                onClick={(event) => {
-                  event.preventDefault();
-                  document.getElementById("gallery")?.scrollIntoView();
-                }}
-              >
-                Gallery
-              </a>
-              <button
-                className="btn tales-toggle"
-                type="button"
-                onClick={() => setTalesOpen(true)}
-              >
-                Quantum tales
-                <span className="tales-toggle-mark" aria-hidden="true">
-                  *
-                </span>
-              </button>
-              <button
-                className="btn news-toggle"
-                type="button"
-                aria-expanded={newsOpen}
-                aria-controls="hero-news"
-                onClick={() => setNewsOpen((open) => !open)}
-              >
-                News
-                <span className="news-toggle-mark" aria-hidden="true">
-                  {newsOpen ? "-" : "+"}
-                </span>
-              </button>
-            </div>
+              {heroLinks.map((link, i) => {
+                const body = (
+                  <>
+                    <span className="hero-link-icon" aria-hidden="true">
+                      {linkIcons[link.icon]}
+                    </span>
+                    <span className="hero-link-text">
+                      <span className="hero-link-label">
+                        {link.label}
+                        {link.id === "news" && (
+                          <span className="news-toggle-mark" aria-hidden="true">
+                            {newsOpen ? "-" : "+"}
+                          </span>
+                        )}
+                      </span>
+                      <span className="hero-link-sub">{link.sub}</span>
+                    </span>
+                  </>
+                );
+                const style = { "--i": i } as React.CSSProperties;
+                if (link.id === "tales" || link.id === "news") {
+                  return (
+                    <li key={link.id} style={style}>
+                      <button
+                        className="hero-link"
+                        type="button"
+                        {...(link.id === "news"
+                          ? { "aria-expanded": newsOpen, "aria-controls": "hero-news" }
+                          : {})}
+                        onClick={() =>
+                          link.id === "news"
+                            ? setNewsOpen((open) => !open)
+                            : setTalesOpen(true)
+                        }
+                      >
+                        {body}
+                      </button>
+                    </li>
+                  );
+                }
+                const anchor = link.href.startsWith("#");
+                return (
+                  <li key={link.id} style={style}>
+                    <a
+                      className="hero-link"
+                      href={link.href}
+                      {...(anchor || link.href.startsWith("mailto:")
+                        ? {}
+                        : { target: "_blank", rel: "noreferrer" })}
+                      onClick={
+                        anchor
+                          ? (event) => {
+                              event.preventDefault();
+                              document.getElementById(link.href.slice(1))?.scrollIntoView();
+                            }
+                          : undefined
+                      }
+                    >
+                      {body}
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
             <div
               id="hero-news"
               className="hero-news-panel"
