@@ -32,6 +32,7 @@ Create and deploy Sara Aminpour's personal website using GitHub as the source re
 - Deployment setup commit: `940da2d` (`Use Cloudflare zone domain`).
 - Real portrait source copied unchanged into the site at `public/saraaminpour.JPG`.
 - Quantum education sub-site added locally at `/quantum/`; it explains quantum computing basics, hybrid quantum machine learning, and pure quantum machine learning for beginners.
+- Tutorials (section No. 05, 2026-10-15): `public/tutorials/` is the public edition of Sara's three Quantum Path tutorials (Machine Learning, Quantum Computing, Quantum ML), served as static files at `/tutorials/`. It is generated, not hand-edited: rebuild it from the tutorials repository with `bash tools/publish_public.sh` (in `kanae-quantum-path`), which builds, checks and copies it here. Notebooks open in Colab from this repository's `public/tutorials/notebooks/`, so keep that path. The section plate is `public/teaching/quantum-path-hub.jpg`.
 
 ## Website Implementation
 

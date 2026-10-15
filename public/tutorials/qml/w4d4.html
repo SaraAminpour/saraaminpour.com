@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to read a QML paper · Quantum Machine Learning · Quantum Path</title>
+<meta name="description" content="Turn four weeks of lessons into a reading checklist: find the claim, test it against the evidence, and reproduce a famous result to see what it does and doesn't show.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qml-w4d4.js?v=mva52clc"></script>
+</head>
+<body class="track-qml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html" aria-current="page"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qml/index.html">Quantum Machine Learning</a><span class="muted">›</span><a href="../qml/index.html#week-4">Week 4 · QML for research</a><span class="muted">›</span><span class="chip plain">Day 4</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qml"><img src="../assets/icons/paper.svg" alt=""></div>
+    <div>
+      <span class="chip qml"><span class="dot"></span>Quantum Machine Learning</span>
+      <h1>How to read a QML paper</h1>
+      <p class="subtitle">Turn four weeks of lessons into a reading checklist: find the claim, test it against the evidence, and reproduce a famous result to see what it does and doesn't show.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 15 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qml-w4d4.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Read a paper in three passes: the claim, the setup, the reproduction</span></li><li><span>Check a QML claim against this tutorial: protocol, baselines, selection, shots and noise, scale, simulability and cost</span></li><li><span>Reproduce a published quantum-kernel result at small scale, and say what it shows</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 15 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Research is mostly reading</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">Research starts with reading, and QML papers are full of bold words: advantage, speedup, enhanced. After four weeks you have the tools to check them. This lesson turns the whole tutorial into a reading checklist, then lets you put a famous claim to the test.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Three passes and a checklist</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>Three passes.</b></p>
+<ol class="task-list">
+<li><b>Five minutes:</b> title, abstract, figures, conclusion. What exactly is claimed: higher accuracy, fewer samples, less time, something new? Which corner of week 1's map: classical data or quantum data?</li>
+<li><b>An hour:</b> the setup. Which data, which model, which baselines, which protocol?</li>
+<li><b>A day:</b> could you reproduce it? A small reproduction catches most problems.</li>
+</ol>
+<p><b>The checklist.</b> Every item is a lesson you've done:</p>
+<ul>
+<li><b>Protocol:</b> preprocessing fitted on the training part, several splits with their spread, the test set touched once (week 2).</li>
+<li><b>Baselines:</b> a strong, equally tuned classical model on the same features (weeks 2 and 3).</li>
+<li><b>Selection:</b> how many models, datasets and settings were tried before the reported one? Remember the winner's curse (week 2).</li>
+<li><b>Shots and noise:</b> exact simulation, shots or hardware? Margins shrink and gradients fade (weeks 3 and 4).</li>
+<li><b>Scale:</b> what happens with more qubits? Think of concentration and barren plateaus (week 2, QC week 7).</li>
+<li><b>Simulability:</b> could a classical surrogate imitate the model (week 4)?</li>
+<li><b>Cost:</b> circuit runs and shots, not parameter counts (week 3).</li>
+<li><b>The data:</b> built to suit the model, or taken from the world? (today's reproduction)</li>
+</ul>
+<p class="big-idea">Find the claim, then check it against the evidence: protocol, baselines, selection, shots and noise, scale, simulability, cost, and where the data came from.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Read like a referee</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>An invented abstract, but every phrase in it is typical. Tap the phrases that should make a careful reader ask a question.</p>
+<div data-widget="paper"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Find all eight red flags before pressing <b>Show all</b>. For each one, ask what experiment would settle it. Then look at the two phrases that are fine: what makes them fine?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Reproduce a famous claim</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Havlíček and coauthors (Nature, 2019) introduced the ZZ feature map you've used since week 1, and showed a quantum kernel classifying an "ad hoc" dataset. Its labels come from encoding each point with the ZZ map, applying a fixed random unitary and measuring the parity <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Z</mi><mo>⊗</mo><mi>Z</mi></mrow><annotation encoding="application/x-tex">Z \otimes Z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⊗</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span></span></span></span>. Rebuild it on two qubits and test the claim with this tutorial's protocol.</p>
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qml-w4d4.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qml/qml-w4d4.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qml/qml-w4d4.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · the ad hoc dataset</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> Statevector, random_unitary
+<span class="hljs-keyword">from</span> sklearn.svm <span class="hljs-keyword">import</span> SVC
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> GridSearchCV
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">zz_map</span>(<span class="hljs-params">x, reps=<span class="hljs-number">2</span></span>):
+    <span class="hljs-string">&quot;&quot;&quot;The ZZ feature map of weeks 1 and 2, on two qubits.&quot;&quot;&quot;</span>
+    qc = QuantumCircuit(<span class="hljs-number">2</span>)
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(reps):
+        qc.h([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>])
+        qc.p(<span class="hljs-number">2</span> * x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+        qc.p(<span class="hljs-number">2</span> * x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)
+        qc.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+        qc.p(<span class="hljs-number">2</span> * (np.pi - x[<span class="hljs-number">0</span>]) * (np.pi - x[<span class="hljs-number">1</span>]), <span class="hljs-number">1</span>)
+        qc.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+    <span class="hljs-keyword">return</span> qc
+
+<span class="hljs-comment"># The paper&#x27;s recipe: label a point by the parity Z⊗Z of its encoded state after a fixed random unitary V,</span>
+<span class="hljs-comment"># and drop points whose value is within a gap of 0.3 of zero.</span>
+V = random_unitary(<span class="hljs-number">4</span>, seed=<span class="hljs-number">7</span>).data
+parity = V.conj().T @ np.kron(np.diag([<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>]), np.diag([<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>])) @ V
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">label_value</span>(<span class="hljs-params">x</span>):
+    s = Statevector(zz_map(x)).data
+    <span class="hljs-keyword">return</span> np.real(s.conj() @ parity @ s)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">ad_hoc</span>(<span class="hljs-params">n_per_class, seed, gap=<span class="hljs-number">0.3</span></span>):
+    rng = np.random.default_rng(seed)
+    X, y = [], []
+    <span class="hljs-keyword">while</span> <span class="hljs-built_in">min</span>(y.count(<span class="hljs-number">0</span>), y.count(<span class="hljs-number">1</span>)) &lt; n_per_class:
+        x = rng.uniform(<span class="hljs-number">0</span>, <span class="hljs-number">2</span> * np.pi, <span class="hljs-number">2</span>)
+        v = label_value(x)
+        c = <span class="hljs-built_in">int</span>(v &gt; <span class="hljs-number">0</span>)
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">abs</span>(v) &gt;= gap <span class="hljs-keyword">and</span> y.count(c) &lt; n_per_class:
+            X.append(x)
+            y.append(c)
+    <span class="hljs-keyword">return</span> np.array(X), np.array(y)
+
+X_all, y_all = ad_hoc(<span class="hljs-number">400</span>, seed=<span class="hljs-number">0</span>)                     <span class="hljs-comment"># 800 points, half of each class</span>
+fig, ax = plt.subplots(figsize=(<span class="hljs-number">4.6</span>, <span class="hljs-number">4.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+ax.scatter(X_all[:, <span class="hljs-number">0</span>], X_all[:, <span class="hljs-number">1</span>], c=np.where(y_all == <span class="hljs-number">0</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>), s=<span class="hljs-number">10</span>)
+ax.set_xlabel(<span class="hljs-string">r&quot;$x_1$&quot;</span>)
+ax.set_ylabel(<span class="hljs-string">r&quot;$x_2$&quot;</span>)
+ax.set_title(<span class="hljs-string">&quot;The ad hoc dataset&quot;</span>)
+ax.set_aspect(<span class="hljs-string">&quot;equal&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/qml-w4d4-adhoc-5b3f6aff.png" width="459" height="496" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the claim, under this tutorial's protocol</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">kernel_matrix</span>(<span class="hljs-params">fmap, A, B</span>):
+    SA = np.array([Statevector(fmap(a)).data <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> A])
+    SB = np.array([Statevector(fmap(b)).data <span class="hljs-keyword">for</span> b <span class="hljs-keyword">in</span> B])
+    <span class="hljs-keyword">return</span> np.<span class="hljs-built_in">abs</span>(SA.conj() @ SB.T) ** <span class="hljs-number">2</span>
+
+K_all = kernel_matrix(zz_map, X_all, X_all)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">compare</span>(<span class="hljs-params">K, sizes=(<span class="hljs-params"><span class="hljs-number">20</span>, <span class="hljs-number">40</span>, <span class="hljs-number">80</span>, <span class="hljs-number">160</span>, <span class="hljs-number">320</span></span>), repeats=<span class="hljs-number">5</span></span>):
+    rows = {}
+    <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> sizes:
+        q, c = [], []
+        <span class="hljs-keyword">for</span> seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(repeats):
+            idx = np.random.default_rng(seed).permutation(<span class="hljs-built_in">len</span>(X_all))
+            tr, te = idx[:n], idx[n:n + <span class="hljs-number">400</span>]
+            folds = <span class="hljs-built_in">min</span>(<span class="hljs-number">5</span>, np.bincount(y_all[tr], minlength=<span class="hljs-number">2</span>).<span class="hljs-built_in">min</span>())
+            qs = GridSearchCV(SVC(kernel=<span class="hljs-string">&quot;precomputed&quot;</span>), {<span class="hljs-string">&quot;C&quot;</span>: [<span class="hljs-number">0.1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">10</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1000</span>]}, cv=folds).fit(K[np.ix_(tr, tr)], y_all[tr])
+            q.append(qs.score(K[np.ix_(te, tr)], y_all[te]))
+            cs = GridSearchCV(SVC(kernel=<span class="hljs-string">&quot;rbf&quot;</span>), {<span class="hljs-string">&quot;C&quot;</span>: [<span class="hljs-number">0.1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">10</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1000</span>], <span class="hljs-string">&quot;gamma&quot;</span>: [<span class="hljs-number">0.01</span>, <span class="hljs-number">0.1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">10</span>]}, cv=folds).fit(X_all[tr], y_all[tr])
+            c.append(cs.score(X_all[te], y_all[te]))
+        rows[n] = (np.mean(q), np.std(q), np.mean(c), np.std(c))
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{n:3d}</span> training points: quantum kernel <span class="hljs-subst">{np.mean(q):<span class="hljs-number">.3</span>f}</span> ± <span class="hljs-subst">{np.std(q):<span class="hljs-number">.3</span>f}</span>   tuned RBF <span class="hljs-subst">{np.mean(c):<span class="hljs-number">.3</span>f}</span> ± <span class="hljs-subst">{np.std(c):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+    <span class="hljs-keyword">return</span> rows
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;guessing the majority class: 0.500&quot;</span>)
+results = compare(K_all)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">guessing the majority class: 0.500
+ 20 training points: quantum kernel 0.934 ± 0.029   tuned RBF 0.520 ± 0.032
+ 40 training points: quantum kernel 0.972 ± 0.028   tuned RBF 0.624 ± 0.044
+ 80 training points: quantum kernel 1.000 ± 0.000   tuned RBF 0.756 ± 0.023
+160 training points: quantum kernel 1.000 ± 0.000   tuned RBF 0.850 ± 0.022
+320 training points: quantum kernel 1.000 ± 0.001   tuned RBF 0.888 ± 0.007</pre></div></details></div>
+<p><b>The claim holds.</b> With 20 training points the quantum kernel scores 93%, while a tuned RBF kernel barely beats a coin flip; from 80 points on, the quantum kernel is perfect. <b>Now read it like a referee.</b> The labels were generated by the very feature map the kernel uses, a perfect prior that real data rarely hand you. At two qubits, the "quantum" kernel ran on a laptop in milliseconds. The paper's real argument is about scale: with many qubits, kernels like this are believed to be hard to compute classically. So the experiment shows that a kernel matched to the data learns from few examples, not that quantum computers classify real data better.</p>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: the quantumness, or the match?</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Swap in a different quantum feature map, the ZZ map with one layer or the angle map, and rerun the comparison. How much of the edge survives?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">angle_map</span>(<span class="hljs-params">x</span>):
+    qc = QuantumCircuit(<span class="hljs-number">2</span>)
+    qc.ry(x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+    qc.ry(x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)
+    <span class="hljs-keyword">return</span> qc
+
+<span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> build kernel_matrix(lambda x: zz_map(x, reps=1), X_all, X_all) and kernel_matrix(angle_map, X_all, X_all),</span>
+<span class="hljs-comment">#       and run compare(...) with each</span></code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>kernel_matrix(lambda x: zz_map(x, reps=1), X_all, X_all)</code> builds the one-layer kernel; pass it to <code>compare</code>. Do the same with <code>angle_map</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">angle_map</span>(<span class="hljs-params">x</span>):
+    qc = QuantumCircuit(<span class="hljs-number">2</span>)
+    qc.ry(x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+    qc.ry(x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)
+    <span class="hljs-keyword">return</span> qc
+
+<span class="hljs-keyword">for</span> name, fmap <span class="hljs-keyword">in</span> ((<span class="hljs-string">&quot;ZZ map, 1 layer&quot;</span>, <span class="hljs-keyword">lambda</span> x: zz_map(x, reps=<span class="hljs-number">1</span>)), (<span class="hljs-string">&quot;angle map&quot;</span>, angle_map)):
+    <span class="hljs-built_in">print</span>(name)
+    compare(kernel_matrix(fmap, X_all, X_all), sizes=(<span class="hljs-number">40</span>, <span class="hljs-number">160</span>, <span class="hljs-number">320</span>))
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The one-layer ZZ map, a close relative of the map that made the labels, keeps part of the edge with few points&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;and falls to the RBF&#x27;s level with more; the unrelated angle map is worse than the RBF at every size.&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The advantage came from matching how the labels were made, not from quantumness as such.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">ZZ map, 1 layer
+ 40 training points: quantum kernel 0.824 ± 0.022   tuned RBF 0.624 ± 0.044
+160 training points: quantum kernel 0.884 ± 0.011   tuned RBF 0.850 ± 0.022
+320 training points: quantum kernel 0.877 ± 0.005   tuned RBF 0.888 ± 0.007
+angle map
+ 40 training points: quantum kernel 0.540 ± 0.039   tuned RBF 0.624 ± 0.044
+160 training points: quantum kernel 0.539 ± 0.038   tuned RBF 0.850 ± 0.022
+320 training points: quantum kernel 0.567 ± 0.024   tuned RBF 0.888 ± 0.007
+The one-layer ZZ map, a close relative of the map that made the labels, keeps part of the edge with few points
+and falls to the RBF's level with more; the unrelated angle map is worse than the RBF at every size.
+The advantage came from matching how the labels were made, not from quantumness as such.</pre></div></details></div></details>
+<p>The one-layer ZZ map, a close relative of the map that made the labels, keeps part of the edge with few points and falls to the RBF's level with more. The unrelated angle map is worse than the RBF at every size. The edge belongs to the match between kernel and data, which is exactly the question to ask of any real dataset.</p>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qml-w4d4" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">An abstract says the hyperparameters were chosen to maximize test accuracy. What does that do to the reported number?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Week 2's shortcuts showed how much it can add."><span class="key">A</span><span>Nothing</span></button><button type="button" class="opt" data-i="1" data-why="Peeking turns the exam into practice."><span class="key">B</span><span>It makes it optimistic: the test set was used for training decisions</span></button><button type="button" class="opt" data-i="2" data-why="Choosing by test score can only flatter it."><span class="key">C</span><span>It makes it pessimistic</span></button><button type="button" class="opt" data-i="3" data-why="It's a biased number, not a precise one."><span class="key">D</span><span>It makes it more precise</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qml-w4d4" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">A quantum kernel beats classical kernels on data generated from its own feature map. What does that show?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The data were built for the kernel; real data weren't tested."><span class="key">A</span><span>Quantum kernels beat classical ones on real data</span></button><button type="button" class="opt" data-i="1" data-why="A real effect, and a narrow one."><span class="key">B</span><span>A kernel matched to how the labels were made learns from few examples</span></button><button type="button" class="opt" data-i="2" data-why="The RBF reached 89% with 320 points and was still improving."><span class="key">C</span><span>No classical kernel can learn these data, with any amount of data</span></button><button type="button" class="opt" data-i="3" data-why="It shows something real, just not a general advantage."><span class="key">D</span><span>Nothing at all</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qml-w4d4" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Which of these is the strongest evidence that a quantum model is useful?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Parameter counts aren't the cost."><span class="key">A</span><span>It has few trainable parameters</span></button><button type="button" class="opt" data-i="1" data-why="That's the whole checklist, passed."><span class="key">B</span><span>It beats strong, equally tuned classical models over several splits and datasets, at a reported cost, and no classical surrogate matches it</span></button><button type="button" class="opt" data-i="2" data-why="Running on hardware shows it can run, not that it helps."><span class="key">C</span><span>It ran on real quantum hardware</span></button><button type="button" class="opt" data-i="3" data-why="Every model's training loss goes down."><span class="key">D</span><span>Its training loss went down</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Read a QML paper for its claim, check the claim against the evidence (protocol, baselines, selection, shots and noise, scale, simulability, cost and the data's origin), and when you can, reproduce it small: the ad hoc dataset shows a real but narrow effect, a matched kernel learning from few examples.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Research link</span>
+<p class="mb0">The debate Havlíček's paper started is still open: do real-world data have the structure quantum kernels need? One answer is to build problems where an advantage can be proven. Liu, Arunachalam and Temme (2021) constructed a classification task, based on the discrete logarithm, that a quantum kernel learns efficiently and no classical algorithm can, if a standard cryptographic assumption holds. Others look for that structure in quantum data, as in week 4.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Keshav, "How to read a paper" (ACM SIGCOMM Computer Communication Review, 2007), the three-pass method. Havlíček and coauthors, "Supervised learning with quantum-enhanced feature spaces" (Nature, 2019). Liu, Arunachalam and Temme, "A rigorous and robust quantum speed-up in supervised machine learning" (Nature Physics, 2021). Cerezo and coauthors, "Challenges and opportunities in quantum machine learning" (Nature Computational Science, 2022).</p>
+</div></div>
+<p class="muted mb0">Tomorrow: the capstone, a mini-study of your own.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qml-w4d4">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qml/w4d5.html"><img src="../assets/icons/capstone.svg" alt=""><span><small>Next in Quantum Machine Learning</small><span class="t">Capstone: your own mini-study</span></span></a><div class="also-today" data-date="2027-01-28" data-track="qml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qml/w4d3.html">← Quantum data</a><a href="../qml/w4d5.html">Capstone →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

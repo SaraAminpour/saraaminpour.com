@@ -130,6 +130,64 @@ type Project = {
   tryLabel?: string;
 };
 
+type Tutorial = {
+  name: string;
+  href: string;
+  length: string;
+  summary: string;
+  weeks: string[];
+};
+
+// Quantum Path, public edition: built from Sara's tutorials repository (kanae-quantum-path, tools/publish_public.sh)
+// into public/tutorials; the plate is public/teaching/quantum-path-hub.jpg.
+const tutorials: Tutorial[] = [
+  {
+    name: "Machine Learning",
+    href: "/tutorials/ml/",
+    length: "7 weeks / 35 lessons",
+    summary:
+      "From a first nearest-neighbor classifier to an agent that learns from rewards, with every optimizer written out in PyTorch.",
+    weeks: [
+      "learning from examples",
+      "regression and gradient descent",
+      "classification",
+      "kernels and support vector machines",
+      "neural networks",
+      "learning without labels",
+      "reinforcement learning"
+    ]
+  },
+  {
+    name: "Quantum Computing",
+    href: "/tutorials/qc/",
+    length: "7 weeks / 35 lessons",
+    summary:
+      "From a single qubit to teleportation, Grover's search, real noisy hardware and trainable circuits, all in Qiskit.",
+    weeks: [
+      "qubits and measurement",
+      "gates and the Bloch sphere",
+      "interference",
+      "entanglement",
+      "protocols and algorithms",
+      "noise and real hardware",
+      "variational circuits"
+    ]
+  },
+  {
+    name: "Quantum Machine Learning",
+    href: "/tutorials/qml/",
+    length: "4 weeks / 20 lessons",
+    summary:
+      "Where the first two meet: encoding data into qubits, quantum kernels, trainable quantum classifiers, and how to run an honest QML study.",
+    weeks: [
+      "data meets qubits",
+      "quantum kernels",
+      "variational quantum classifiers",
+      "QML for research"
+    ]
+  }
+];
+
 const projects: Project[] = [
   {
     slug: "sepia",
@@ -1147,8 +1205,85 @@ function HomePage() {
             </div>
           </section>
 
+          <section id="tutorials" className="sec">
+            <SectionHead no="05" name="Tutorials" />
+            <Reveal as="h2" className="sec-title" delay={60}>
+              From a first classifier to quantum machine learning, ten minutes a day.
+            </Reveal>
+            <Reveal as="article" className="project" delay={90}>
+              <figure className="project-figure">
+                <a className="project-plate" href="/tutorials/" aria-label="Open Quantum Path">
+                  <img
+                    src="/teaching/quantum-path-hub.jpg"
+                    alt="The Quantum Path home page: Qubi the cartoon qubit says hello beside two dotted roads, Machine Learning and Quantum Computing, that join into Quantum Machine Learning, with today's two lessons and the three tutorials below."
+                    loading="lazy"
+                  />
+                </a>
+                <figcaption className="project-caption">
+                  Tut. 01 - Quantum Path, with Qubi the qubit as the guide.
+                </figcaption>
+              </figure>
+              <div className="project-copy">
+                <div className="project-intro">
+                  <p className="project-meta">2026 / Free, no account needed</p>
+                  <h3 className="project-name">
+                    Quantum Path
+                    <em>three tutorials: machine learning, quantum computing, and where they meet</em>
+                  </h3>
+                  <div className="project-actions">
+                    <a className="btn btn-ink btn-ink-solid" href="/tutorials/">
+                      Start learning
+                    </a>
+                    <a className="btn btn-ink" href="/tutorials/glossary.html">
+                      Glossary of 120 terms
+                    </a>
+                  </div>
+                </div>
+                <div className="project-text">
+                  <p className="project-body">
+                    I wrote these tutorials for a new student in our lab, and
+                    they are open to anyone. Machine Learning and Quantum
+                    Computing run side by side, one short lesson of each a day;
+                    Quantum Machine Learning then joins them. Every lesson has an
+                    idea drawn out in pictures, something to play with right on
+                    the page, real code with the output it really printed, a
+                    small exercise with a solution, and three quick questions.
+                    The code comes as 90 Jupyter notebooks that open in Google
+                    Colab, and your progress stays in your own browser.
+                  </p>
+                  <p className="index-terms project-stack">
+                    <em>Made with</em> - Python; NumPy; scikit-learn; PyTorch;
+                    Qiskit; Jupyter; interactive widgets in plain JavaScript.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+            <ol className="tutorial-list">
+              {tutorials.map((tutorial, i) => (
+                <Reveal as="li" className="tutorial-item" key={tutorial.href} delay={i * 80}>
+                  <span className="tutorial-no">{String(i + 1).padStart(2, "0")}</span>
+                  <div className="tutorial-head">
+                    <h3 className="tutorial-name">
+                      <a href={tutorial.href}>{tutorial.name}</a>
+                    </h3>
+                    <p className="tutorial-length">{tutorial.length}</p>
+                  </div>
+                  <div className="tutorial-copy">
+                    <p className="tutorial-summary">{tutorial.summary}</p>
+                    <p className="tutorial-weeks">
+                      <em>Weeks</em> - {tutorial.weeks.join("; ")}.
+                    </p>
+                    <a className="tutorial-go" href={tutorial.href}>
+                      Open the {tutorial.name} tutorial
+                    </a>
+                  </div>
+                </Reveal>
+              ))}
+            </ol>
+          </section>
+
           <section id="gallery" className="sec">
-            <SectionHead no="05" name="Gallery" />
+            <SectionHead no="06" name="Gallery" />
             {galleryItems.length === 0 ? (
               <Reveal as="p" className="gallery-empty" delay={80}>
                 Plates forthcoming - photographs are being selected for this
@@ -1185,7 +1320,7 @@ function HomePage() {
 
         <section id="correspondence" className="outro">
           <div className="outro-copy">
-            <SectionHead no="06" name="Correspondence" />
+            <SectionHead no="07" name="Correspondence" />
             <Reveal as="h2" className="outro-title" delay={80}>
               Open to research conversations, collaborations, and speaking
               opportunities.

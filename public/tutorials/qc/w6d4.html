@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From circuit to chip: transpilation · Quantum Computing · Quantum Path</title>
+<meta name="description" content="Real chips speak only a few gates, and only neighbors can talk. Watch a circuit get translated, placed and routed, and see what that costs in noise.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qc-w6d4.js?v=mva52clc"></script>
+</head>
+<body class="track-qc">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html" aria-current="page"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qc/index.html">Quantum Computing</a><span class="muted">›</span><a href="../qc/index.html#week-6">Week 6 · Noise and real hardware</a><span class="muted">›</span><span class="chip plain">Day 4</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qc"><img src="../assets/icons/chip.svg" alt=""></div>
+    <div>
+      <span class="chip qc"><span class="dot"></span>Quantum Computing</span>
+      <h1>From circuit to chip: transpilation</h1>
+      <p class="subtitle">Real chips speak only a few gates, and only neighbors can talk. Watch a circuit get translated, placed and routed, and see what that costs in noise.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 12 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qc-w6d4.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Name the two limits of a chip: native gates and connectivity (the coupling map)</span></li><li><span>Explain the transpiler's steps: translate, place (layout), route with SWAPs, optimize</span></li><li><span>Compare circuits before and after, and connect extra CNOTs to extra noise</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 12 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>The circuit you draw is not the circuit that runs</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-idea.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">All term you've drawn circuits with any gate on any qubits. A real chip is pickier: it knows a handful of gates, and its qubits sit on a fixed map where only neighbors can do a CNOT. Before your circuit runs, a program called the <b>transpiler</b> rewrites it. Knowing what it does explains why your results on hardware get noisier than your circuit suggests.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Translate, place, route, tidy up</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>A chip has two kinds of limits:</p>
+<ul>
+<li><b>Native gates.</b> IBM chips offer <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mi>X</mi></msqrt></mrow><annotation encoding="application/x-tex">\sqrt{X}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.04em;vertical-align:-0.1133em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9267em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord mathnormal" style="margin-right:0.07847em;">X</span></span></span><span style="top:-2.8867em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1133em;"><span></span></span></span></span></span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>Z</mi></msub><mo stretchy="false">(</mo><mi>θ</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">R_Z(\theta)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0077em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mclose">)</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi></mrow><annotation encoding="application/x-tex">X</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">X</span></span></span></span> and one two-qubit gate (such as CNOT or CZ). Every other gate is built from these: H becomes <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>Z</mi></msub><mo stretchy="false">(</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><mo stretchy="false">)</mo><mtext> </mtext><msqrt><mi>X</mi></msqrt><mtext> </mtext><msub><mi>R</mi><mi>Z</mi></msub><mo stretchy="false">(</mo><mfrac><mi>π</mi><mn>2</mn></mfrac><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">R_Z(\frac\pi2)\,\sqrt X\,R_Z(\frac\pi2)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2717em;vertical-align:-0.345em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0077em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6954em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">π</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9267em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;padding-left:0.833em;">X</span></span><span style="top:-2.8867em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1133em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0077em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6954em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">π</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose">)</span></span></span></span>. The <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>Z</mi></msub></mrow><annotation encoding="application/x-tex">R_Z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0077em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> gates are "virtual", done by shifting later pulses, so they're free; <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msqrt><mi>X</mi></msqrt></mrow><annotation encoding="application/x-tex">\sqrt X</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.04em;vertical-align:-0.1133em;"></span><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9267em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;padding-left:0.833em;">X</span></span><span style="top:-2.8867em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1133em;"><span></span></span></span></span></span></span></span></span> is cheap; the two-qubit gate is the expensive one, with roughly ten times the error.</li>
+<li><b>Connectivity.</b> The <b>coupling map</b> lists which pairs of physical qubits can do a two-qubit gate: often a line, a grid or a "heavy hexagon", never everything with everything.</li>
+</ul>
+<p>The transpiler works in stages:</p>
+<ol class="task-list">
+<li><b>Translate</b> every gate into native gates.</li>
+<li><b>Place</b> (layout): decide which physical qubit holds each of your qubits.</li>
+<li><b>Route</b>: when a CNOT's qubits aren't neighbors, insert <b>SWAP</b> gates to move them together. One SWAP costs three CNOTs.</li>
+<li><b>Optimize</b>: cancel gates that undo each other and merge rotations. Higher <b>optimization levels</b> (0 to 3) search harder.</li>
+</ol>
+<p><b>Why it matters:</b> every extra CNOT lets in noise (Monday's exercise). A circuit that needs many SWAPs can lose much of its accuracy before it even starts. Good placement, and circuits designed for the chip's map, make a real difference.</p>
+<p class="big-idea">The transpiler fits your circuit to the chip: native gates, a placement, SWAPs for distant pairs, and cleanup. Every SWAP is three more chances for noise.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>The routing puzzle</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Place the logical qubits a–e on the chip (tap two chip qubits to swap them). The router adds SWAPs wherever a CNOT's qubits aren't neighbors; the readouts count the cost.</p>
+<div data-widget="route"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">On the T-shaped chip, the GHZ star needs qubit a to talk to everyone: where should a sit? Find a layout with only one SWAP. Then switch to "every pair": no layout avoids SWAPs, and on a ring it gets cheaper. Chip designers face exactly this trade-off.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Transpiling in Qiskit</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qc-w6d4.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qc/qc-w6d4.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qc/qc-w6d4.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · H in native gates</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> itertools
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit, transpile
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> Operator
+<span class="hljs-keyword">from</span> qiskit.providers.fake_provider <span class="hljs-keyword">import</span> GenericBackendV2
+<span class="hljs-keyword">from</span> qiskit.transpiler <span class="hljs-keyword">import</span> CouplingMap
+
+h_only = QuantumCircuit(<span class="hljs-number">1</span>)
+h_only.h(<span class="hljs-number">0</span>)
+native = transpile(h_only, basis_gates=[<span class="hljs-string">&quot;rz&quot;</span>, <span class="hljs-string">&quot;sx&quot;</span>, <span class="hljs-string">&quot;x&quot;</span>, <span class="hljs-string">&quot;cx&quot;</span>])
+<span class="hljs-built_in">print</span>(native.draw(<span class="hljs-string">&quot;text&quot;</span>))
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;same gate (up to a global phase):&quot;</span>, Operator(h_only).equiv(Operator(native)))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">global phase: π/4
+   ┌─────────┐┌────┐┌─────────┐
+q: ┤ Rz(π/2) ├┤ √X ├┤ Rz(π/2) ├
+   └─────────┘└────┘└─────────┘
+same gate (up to a global phase): True</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · a T-shaped chip</span><button type="button" class="btn-copy">Copy</button></div><pre><code>tee = CouplingMap([[<span class="hljs-number">0</span>, <span class="hljs-number">1</span>], [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>], [<span class="hljs-number">1</span>, <span class="hljs-number">3</span>], [<span class="hljs-number">3</span>, <span class="hljs-number">4</span>]])
+tee.make_symmetric()
+chip = GenericBackendV2(num_qubits=<span class="hljs-number">5</span>, coupling_map=tee, basis_gates=[<span class="hljs-string">&quot;cx&quot;</span>, <span class="hljs-string">&quot;rz&quot;</span>, <span class="hljs-string">&quot;sx&quot;</span>, <span class="hljs-string">&quot;x&quot;</span>], seed=<span class="hljs-number">1</span>)
+
+star = QuantumCircuit(<span class="hljs-number">5</span>)                       <span class="hljs-comment"># a GHZ state made with CNOTs from qubit 0 to everyone</span>
+star.h(<span class="hljs-number">0</span>)
+<span class="hljs-keyword">for</span> target <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">5</span>):
+    star.cx(<span class="hljs-number">0</span>, target)
+
+<span class="hljs-keyword">for</span> level <span class="hljs-keyword">in</span> [<span class="hljs-number">0</span>, <span class="hljs-number">3</span>]:
+    routed = transpile(star, chip, optimization_level=level, seed_transpiler=<span class="hljs-number">1</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;optimization level <span class="hljs-subst">{level}</span>: <span class="hljs-subst">{routed.count_ops().get(<span class="hljs-string">&#x27;cx&#x27;</span>, <span class="hljs-number">0</span>)}</span> CNOTs (the circuit has 4), depth <span class="hljs-subst">{routed.depth()}</span>&quot;</span>)
+transpile(star, chip, optimization_level=<span class="hljs-number">3</span>, seed_transpiler=<span class="hljs-number">1</span>).draw(<span class="hljs-string">&quot;mpl&quot;</span>, style=<span class="hljs-string">&quot;clifford&quot;</span>, fold=-<span class="hljs-number">1</span>, idle_wires=<span class="hljs-literal">False</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">optimization level 0: 10 CNOTs (the circuit has 4), depth 13
+optimization level 3: 7 CNOTs (the circuit has 4), depth 15</pre><img src="../assets/out/qc-w6d4-chip-589b1bf7.png" width="1230" height="416" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · what routing costs in noise</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> qiskit_aer <span class="hljs-keyword">import</span> AerSimulator
+<span class="hljs-keyword">from</span> qiskit_aer.noise <span class="hljs-keyword">import</span> NoiseModel, depolarizing_error
+
+noise = NoiseModel()
+noise.add_all_qubit_quantum_error(depolarizing_error(<span class="hljs-number">0.01</span>, <span class="hljs-number">2</span>), [<span class="hljs-string">&quot;cx&quot;</span>])
+sim = AerSimulator(noise_model=noise)
+
+measured = star.copy()
+measured.measure_all()
+<span class="hljs-keyword">for</span> name, circuit <span class="hljs-keyword">in</span> [(<span class="hljs-string">&quot;all-to-all chip (no SWAPs)&quot;</span>, transpile(measured, sim, optimization_level=<span class="hljs-number">0</span>)),
+                      (<span class="hljs-string">&quot;T-shaped chip, level 0&quot;</span>, transpile(measured, chip, optimization_level=<span class="hljs-number">0</span>, seed_transpiler=<span class="hljs-number">1</span>)),
+                      (<span class="hljs-string">&quot;T-shaped chip, level 3&quot;</span>, transpile(measured, chip, optimization_level=<span class="hljs-number">3</span>, seed_transpiler=<span class="hljs-number">1</span>))]:
+    counts = sim.run(circuit, shots=<span class="hljs-number">8000</span>, seed_simulator=<span class="hljs-number">2</span>).result().get_counts()
+    good = (counts.get(<span class="hljs-string">&quot;00000&quot;</span>, <span class="hljs-number">0</span>) + counts.get(<span class="hljs-string">&quot;11111&quot;</span>, <span class="hljs-number">0</span>)) / <span class="hljs-number">8000</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{name:28s}</span>: <span class="hljs-subst">{circuit.count_ops().get(<span class="hljs-string">&#x27;cx&#x27;</span>, <span class="hljs-number">0</span>):2d}</span> CNOTs, correct outcomes <span class="hljs-subst">{good:<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">all-to-all chip (no SWAPs)  :  4 CNOTs, correct outcomes 0.974
+T-shaped chip, level 0      : 10 CNOTs, correct outcomes 0.939
+T-shaped chip, level 3      :  7 CNOTs, correct outcomes 0.952</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: place the qubits yourself</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Transpile a chain of CNOTs onto the T-shaped chip from each of the 120 possible starting layouts. What's the fewest CNOTs? Does the transpiler's automatic choice find it?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>chain = QuantumCircuit(<span class="hljs-number">5</span>)
+chain.h(<span class="hljs-number">0</span>)
+<span class="hljs-keyword">for</span> q <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">4</span>):
+    chain.cx(q, q + <span class="hljs-number">1</span>)
+
+counts = {}
+<span class="hljs-keyword">for</span> perm <span class="hljs-keyword">in</span> itertools.permutations(<span class="hljs-built_in">range</span>(<span class="hljs-number">5</span>)):
+    counts[perm] = <span class="hljs-number">0</span>     <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> transpile(chain, chip, initial_layout=list(perm), optimization_level=1,</span>
+                         <span class="hljs-comment">#       seed_transpiler=1), then .count_ops().get(&quot;cx&quot;, 0)</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;fewest CNOTs:&quot;</span>, <span class="hljs-built_in">min</span>(counts.values()))</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>transpile(chain, chip, initial_layout=list(perm), optimization_level=1, seed_transpiler=1).count_ops().get("cx", 0)</code> counts the CNOTs for one layout.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>chain = QuantumCircuit(<span class="hljs-number">5</span>)
+chain.h(<span class="hljs-number">0</span>)
+<span class="hljs-keyword">for</span> q <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">4</span>):
+    chain.cx(q, q + <span class="hljs-number">1</span>)
+
+counts = {}
+<span class="hljs-keyword">for</span> perm <span class="hljs-keyword">in</span> itertools.permutations(<span class="hljs-built_in">range</span>(<span class="hljs-number">5</span>)):
+    routed = transpile(chain, chip, initial_layout=<span class="hljs-built_in">list</span>(perm), optimization_level=<span class="hljs-number">1</span>, seed_transpiler=<span class="hljs-number">1</span>)
+    counts[perm] = routed.count_ops().get(<span class="hljs-string">&quot;cx&quot;</span>, <span class="hljs-number">0</span>)
+best = <span class="hljs-built_in">min</span>(counts.values())
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;fewest CNOTs over all 120 layouts: <span class="hljs-subst">{best}</span> (the chain has 4); worst: <span class="hljs-subst">{<span class="hljs-built_in">max</span>(counts.values())}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;best layouts:&quot;</span>, [p <span class="hljs-keyword">for</span> p, c <span class="hljs-keyword">in</span> counts.items() <span class="hljs-keyword">if</span> c == best])
+auto = transpile(chain, chip, optimization_level=<span class="hljs-number">3</span>, seed_transpiler=<span class="hljs-number">1</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;the transpiler&#x27;s own choice at level 3: <span class="hljs-subst">{auto.count_ops().get(<span class="hljs-string">&#x27;cx&#x27;</span>, <span class="hljs-number">0</span>)}</span> CNOTs&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;A chain of 5 doesn&#x27;t fit on a T without a detour, and smart placement matters a lot. Automatic layout&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;is a heuristic: good, not always the best.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">fewest CNOTs over all 120 layouts: 5 (the chain has 4); worst: 16
+best layouts: [(0, 1, 2, 3, 4), (2, 1, 0, 3, 4), (4, 3, 1, 0, 2), (4, 3, 1, 2, 0)]
+the transpiler's own choice at level 3: 7 CNOTs
+A chain of 5 doesn't fit on a T without a detour, and smart placement matters a lot. Automatic layout
+is a heuristic: good, not always the best.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qc-w6d4" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Your circuit has a CNOT between two qubits that aren't neighbors on the chip. What does the transpiler do?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="It can always route, at a cost."><span class="key">A</span><span>Refuses to run it</span></button><button type="button" class="opt" data-i="1" data-why="Each SWAP is three CNOTs, so routing adds noise."><span class="key">B</span><span>Inserts SWAPs to bring the qubits next to each other</span></button><button type="button" class="opt" data-i="2" data-why="That would change what the circuit computes."><span class="key">C</span><span>Replaces the CNOT with an H</span></button><button type="button" class="opt" data-i="3" data-why="There are no wires between distant qubits."><span class="key">D</span><span>Uses a longer wire</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qc-w6d4" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">Why are <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>R</mi><mi>Z</mi></msub></mrow><annotation encoding="application/x-tex">R_Z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3283em;"><span style="top:-2.55em;margin-left:-0.0077em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.07153em;">Z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> gates almost free on IBM hardware?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="They're everywhere in translated circuits."><span class="key">A</span><span>They're never used</span></button><button type="button" class="opt" data-i="1" data-why="No pulse is played, so they take no time and add no error."><span class="key">B</span><span>They're done virtually, by shifting the phase of later pulses</span></button><button type="button" class="opt" data-i="2" data-why="They take no time at all."><span class="key">C</span><span>They're slower but more accurate</span></button><button type="button" class="opt" data-i="3" data-why="They rotate qubits."><span class="key">D</span><span>They act on classical bits</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qc-w6d4" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">A circuit needs 10 CNOTs after routing instead of 4. If each CNOT fails with probability 1%, roughly how much less likely is an error-free run?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Every extra CNOT is another chance for an error."><span class="key">A</span><span>No difference</span></button><button type="button" class="opt" data-i="1" data-why="&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;msup&gt;&lt;mn&gt;0.99&lt;/mn&gt;&lt;mn&gt;4&lt;/mn&gt;&lt;/msup&gt;&lt;mo&gt;≈&lt;/mo&gt;&lt;mn&gt;96&lt;/mn&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;%&lt;/mi&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;0.99^{4} \approx 96\%&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8141em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;0.9&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord&quot;&gt;9&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.8141em;&quot;&gt;&lt;span style=&quot;top:-3.063em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mtight&quot;&gt;&lt;span class=&quot;mord mtight&quot;&gt;4&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;≈&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8056em;vertical-align:-0.0556em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;96%&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt; versus &lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;msup&gt;&lt;mn&gt;0.99&lt;/mn&gt;&lt;mn&gt;10&lt;/mn&gt;&lt;/msup&gt;&lt;mo&gt;≈&lt;/mo&gt;&lt;mn&gt;90&lt;/mn&gt;&lt;mi mathvariant=&quot;normal&quot;&gt;%&lt;/mi&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;0.99^{10} \approx 90\%&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8141em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;0.9&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mord&quot;&gt;9&lt;/span&gt;&lt;span class=&quot;msupsub&quot;&gt;&lt;span class=&quot;vlist-t&quot;&gt;&lt;span class=&quot;vlist-r&quot;&gt;&lt;span class=&quot;vlist&quot; style=&quot;height:0.8141em;&quot;&gt;&lt;span style=&quot;top:-3.063em;margin-right:0.05em;&quot;&gt;&lt;span class=&quot;pstrut&quot; style=&quot;height:2.7em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;sizing reset-size6 size3 mtight&quot;&gt;&lt;span class=&quot;mord mtight&quot;&gt;&lt;span class=&quot;mord mtight&quot;&gt;10&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;≈&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8056em;vertical-align:-0.0556em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;90%&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;."><span class="key">B</span><span>About 6 percentage points less</span></button><button type="button" class="opt" data-i="2" data-why="The effect adds up gently at these error rates."><span class="key">C</span><span>Ten times less likely</span></button><button type="button" class="opt" data-i="3" data-why="Most runs are still fine."><span class="key">D</span><span>It always fails</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">A chip offers few native gates and limited connectivity, so the transpiler translates gates, chooses a layout, routes with SWAPs (three CNOTs each) and optimizes; every CNOT it adds is extra noise, so layout and chip-aware circuit design matter.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Quantum ML circuits often entangle "every pair" of qubits, which is the most expensive pattern to route. That's why hardware-friendly designs entangle only neighbors on the chip's map (a "hardware-efficient ansatz"): fewer SWAPs, less noise, at the price of less flexible circuits.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">The Qiskit documentation's "Transpile" guides describe each stage and the optimization levels in detail. IBM Quantum Learning's course <em>Utility-scale quantum computing</em> shows what transpilation does to real circuits on 100-qubit chips.</p>
+</div></div>
+<p class="muted mb0">Next in Quantum Computing: the week 6 project, simulating noise and fighting back with error mitigation.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qc-w6d4">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qc btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qc/w6d5.html"><img src="../assets/icons/mitigate.svg" alt=""><span><small>Next in Quantum Computing</small><span class="t">Project: noisy simulation and error mitigation</span></span></a><div class="also-today" data-date="2026-12-03" data-track="qc"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qc/w6d3.html">← How close?</a><a href="../qc/w6d5.html">Mitigation →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

@@ -1708,3 +1708,116 @@ ol {
     transform: none;
   }
 }
+
+/* ---------- tutorials ---------- */
+
+#tutorials .project {
+  margin-top: 40px;
+}
+
+.tutorial-list {
+  list-style: none;
+  margin: clamp(40px, 5vw, 60px) 0 0;
+  padding: 0;
+  border-top: 1px solid var(--hair-ink);
+}
+
+.tutorial-item {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 0.8fr) minmax(0, 1.4fr);
+  gap: clamp(14px, 3vw, 40px);
+  align-items: start;
+  padding: 26px 0 28px;
+  border-bottom: 1px solid var(--hair-ink);
+}
+
+.tutorial-no {
+  padding-top: 0.55rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: var(--rose);
+}
+
+.tutorial-name {
+  font-family: var(--serif-display);
+  font-weight: 460;
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  line-height: 1.1;
+}
+
+.tutorial-name a {
+  color: inherit;
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 320ms ease;
+}
+
+.tutorial-name a:hover,
+.tutorial-name a:focus-visible {
+  background-size: 100% 1px;
+}
+
+.tutorial-length {
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tutorial-summary {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.tutorial-weeks {
+  margin-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.85;
+  color: var(--muted);
+}
+
+.tutorial-weeks em {
+  font-style: normal;
+  color: var(--rose);
+}
+
+.tutorial-go {
+  display: inline-block;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rose);
+  padding-bottom: 2px;
+}
+
+.tutorial-go::after {
+  content: " \2192";
+}
+
+.tutorial-go:hover,
+.tutorial-go:focus-visible {
+  color: var(--rose);
+}
+
+@media (max-width: 720px) {
+  .tutorial-item {
+    grid-template-columns: 2.4rem minmax(0, 1fr);
+  }
+
+  .tutorial-copy {
+    grid-column: 2;
+  }
+}

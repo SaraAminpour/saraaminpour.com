@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Training habits: batches, Adam and early stopping · Machine Learning · Quantum Path</title>
+<meta name="description" content="Three habits behind almost every trained network: cheap noisy steps, a smarter way to step, and knowing when to quit.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w5d4.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-5">Week 5 · Neural networks with PyTorch</a><span class="muted">›</span><span class="chip plain">Day 4</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/curves.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Training habits: batches, Adam and early stopping</h1>
+      <p class="subtitle">Three habits behind almost every trained network: cheap noisy steps, a smarter way to step, and knowing when to quit.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 12 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w5d4.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Explain mini-batches, epochs and why noisy steps are fine</span></li><li><span>Describe what momentum and Adam add to gradient descent</span></li><li><span>Use a validation set to stop training at the right moment</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 12 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>The recipe is easy; the habits matter</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">You can already train a network: a loss, gradients from backpropagation, and small steps downhill. But people who train networks every day all use three extra habits. Each is one or two lines of PyTorch, and each can turn a failed run into a good one.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Three habits</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>1. Mini-batches.</b> So far each step used the average gradient over the whole training set. With a million examples, that's a million forward and backward passes for one step. Instead, take a random <b>mini-batch</b> of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>B</mi></mrow><annotation encoding="application/x-tex">B</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span></span></span></span> examples (typically 32 to 256) and step with its gradient:</p>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>g</mi><mo>=</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mtext> </mtext><mo>∈</mo><mtext> </mtext><mtext>batch</mtext></mrow></munder><mi mathvariant="normal">∇</mi><msub><mi mathvariant="normal">ℓ</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>w</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">g = \frac{1}{B}\sum_{i \,\in\, \text{batch}} \nabla \ell_i(w)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.6509em;vertical-align:-1.3295em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3214em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.05017em;">B</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop op-limits"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.05em;"><span style="top:-1.8479em;margin-left:0em;"><span class="pstrut" style="height:3.05em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">i</span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mrel mtight">∈</span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mord text mtight"><span class="mord mtight">batch</span></span></span></span></span><span style="top:-3.05em;"><span class="pstrut" style="height:3.05em;"></span><span><span class="mop op-symbol large-op">∑</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:1.3295em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">∇</span><span class="mord"><span class="mord">ℓ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mclose">)</span></span></span></span></span></div>
+<p>It's a noisy estimate of the full gradient, but on average it points the right way, and it's cheap. One pass through all the data is an <b>epoch</b>: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mi mathvariant="normal">/</mi><mi>B</mi></mrow><annotation encoding="application/x-tex">N/B</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mord">/</span><span class="mord mathnormal" style="margin-right:0.05017em;">B</span></span></span></span> steps. This is <b>stochastic gradient descent</b> (SGD).</p>
+<p><b>2. Momentum and Adam.</b> In a long, narrow valley plain gradient descent zigzags from wall to wall and crawls along the floor. <b>Momentum</b> lets the steps build up speed, like a ball rolling downhill:</p>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>v</mi><mo>←</mo><mi>β</mi><mi>v</mi><mo>+</mo><mi>g</mi><mo separator="true">,</mo><mspace width="2em"/><mi>w</mi><mo>←</mo><mi>w</mi><mo>−</mo><mi>η</mi><mtext> </mtext><mi>v</mi><mspace width="2em"/><mo stretchy="false">(</mo><mi>β</mi><mo>≈</mo><mn>0.9</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">v \leftarrow \beta v + g, \qquad w \leftarrow w - \eta\, v \qquad (\beta \approx 0.9)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">g</span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">η</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mspace" style="margin-right:2em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">0.9</span><span class="mclose">)</span></span></span></span></span></div>
+<p>Along the steady downhill direction the gradients agree, so <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span> grows: with <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.9</mn></mrow><annotation encoding="application/x-tex">\beta = 0.9</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05278em;">β</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.9</span></span></span></span>, up to ten times a plain step. Across the valley they flip sign every step, so there they mostly cancel instead of adding up (the ball can still swing from wall to wall for a while). <b>Adam</b> keeps a running average of each weight's gradient (<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span>) and of its square (<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>s</mi></mrow><annotation encoding="application/x-tex">s</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">s</span></span></span></span>), and divides one by the other:</p>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>w</mi><mo>←</mo><mi>w</mi><mo>−</mo><mi>η</mi><mtext> </mtext><mfrac><mover accent="true"><mi>m</mi><mo>^</mo></mover><mrow><msqrt><mover accent="true"><mi>s</mi><mo>^</mo></mover></msqrt><mo>+</mo><mi>ϵ</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">w \leftarrow w - \eta\,\frac{\hat m}{\sqrt{\hat s} + \epsilon}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:2.3014em;vertical-align:-0.93em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">η</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.1778em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord sqrt"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9322em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord" style="padding-left:0.833em;"><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">s</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1944em;"><span class="mord">^</span></span></span></span></span></span></span></span></span><span style="top:-2.8922em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1078em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal">ϵ</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">m</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">^</span></span></span></span></span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.93em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></div>
+<p>(The hats are a small correction for the first few steps.) So every weight gets its own step size: weights with big, steady gradients and weights with tiny ones all move at a sensible pace. Adam is the usual first choice; its default learning rate in PyTorch is 0.001.</p>
+<p><b>3. Early stopping.</b> Keep a <b>validation set</b> aside (week 1). After each epoch, compute the validation loss. Training loss almost always keeps falling; validation loss falls, then turns back up once the network starts memorizing the training points. So remember the weights with the lowest validation loss, and stop when it hasn't improved for <b>patience</b> epochs.</p>
+<p class="big-idea">Mini-batches make each step cheap, momentum and Adam make each step smarter, and early stopping decides when to quit.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Race the optimizers, then stop in time</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Three optimizers start from the same point with the same learning rate. Press <b>Race</b>. Click the map to move the start.</p>
+<div data-widget="race"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">In the narrow valley, gradient descent drops to the floor and then crawls along it. Momentum swings from wall to wall, but the speed it builds along the floor carries it to the bottom, and Adam curves smoothly there. Set η to 0.45 and gradient descent zigzags too; push it above 0.5 and gradient descent blows up. Switch the gradient to <b>a batch of 8</b>: every path jitters and none settles exactly at the bottom (that's why people often shrink η near the end of training). On the bumpy bowl, momentum rolls through the small dips that trap the other two.</p>
+</div></div>
+<p>Now a real training run: a big network on 40 noisy points. Watch both loss curves and the boundary.</p>
+<div data-widget="earlystop"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Press <b>Train all 400 epochs</b>, then drag the epoch slider: around epoch 90 the boundary is smooth; by epoch 400 it bends around single noisy points. Then set the patience to 3 and train with early stopping: it gives up on a flat stretch near epoch 14, long before the real best point.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The habits in PyTorch</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w5d4.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w5d4.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w5d4.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · a DataLoader serves mini-batches</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> copy
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons
+<span class="hljs-keyword">from</span> torch.utils.data <span class="hljs-keyword">import</span> TensorDataset, DataLoader
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+X, y = make_moons(n_samples=<span class="hljs-number">2000</span>, noise=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>)
+data = TensorDataset(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>))
+loader = DataLoader(data, batch_size=<span class="hljs-number">32</span>, shuffle=<span class="hljs-literal">True</span>)   <span class="hljs-comment"># shuffle: a fresh random order every epoch</span>
+
+xb, yb = <span class="hljs-built_in">next</span>(<span class="hljs-built_in">iter</span>(loader))
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;one batch:&quot;</span>, <span class="hljs-built_in">tuple</span>(xb.shape), <span class="hljs-string">&quot;inputs and&quot;</span>, <span class="hljs-built_in">tuple</span>(yb.shape), <span class="hljs-string">&quot;labels&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;steps in one epoch:&quot;</span>, <span class="hljs-built_in">len</span>(loader), <span class="hljs-string">&quot;(2000 examples in batches of 32, the last batch is smaller)&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">one batch: (32, 2) inputs and (32, 1) labels
+steps in one epoch: 63 (2000 examples in batches of 32, the last batch is smaller)</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · same epochs, more steps</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">make_net</span>(<span class="hljs-params">seed=<span class="hljs-number">0</span></span>):
+    torch.manual_seed(seed)
+    <span class="hljs-keyword">return</span> torch.nn.Sequential(torch.nn.Linear(<span class="hljs-number">2</span>, <span class="hljs-number">32</span>), torch.nn.Tanh(), torch.nn.Linear(<span class="hljs-number">32</span>, <span class="hljs-number">1</span>))
+
+loss_fn = torch.nn.BCEWithLogitsLoss()
+X_all, y_all = data.tensors
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">full_loss</span>(<span class="hljs-params">net</span>):
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        <span class="hljs-keyword">return</span> loss_fn(net(X_all), y_all).item()
+
+net = make_net()
+opt = torch.optim.SGD(net.parameters(), lr=<span class="hljs-number">0.5</span>)
+<span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>):
+    opt.zero_grad()
+    loss_fn(net(X_all), y_all).backward()          <span class="hljs-comment"># the whole dataset: one step per epoch</span>
+    opt.step()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;whole dataset per step, 10 epochs = 10 steps:  loss <span class="hljs-subst">{full_loss(net):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+
+net = make_net()
+opt = torch.optim.SGD(net.parameters(), lr=<span class="hljs-number">0.5</span>)
+<span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>):
+    <span class="hljs-keyword">for</span> xb, yb <span class="hljs-keyword">in</span> loader:                          <span class="hljs-comment"># batches of 32: 63 steps per epoch</span>
+        opt.zero_grad()
+        loss_fn(net(xb), yb).backward()
+        opt.step()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;batches of 32,          10 epochs = <span class="hljs-subst">{<span class="hljs-number">10</span> * <span class="hljs-built_in">len</span>(loader)}</span> steps: loss <span class="hljs-subst">{full_loss(net):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">whole dataset per step, 10 epochs = 10 steps:  loss 0.356
+batches of 32,          10 epochs = 630 steps: loss 0.160</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · SGD, momentum and Adam</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">train</span>(<span class="hljs-params">make_opt, epochs=<span class="hljs-number">15</span></span>):
+    net = make_net()
+    opt = make_opt(net.parameters())
+    order = torch.Generator().manual_seed(<span class="hljs-number">1</span>)       <span class="hljs-comment"># the same batches for every optimizer</span>
+    curve = [full_loss(net)]
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(epochs):
+        <span class="hljs-keyword">for</span> xb, yb <span class="hljs-keyword">in</span> DataLoader(data, batch_size=<span class="hljs-number">32</span>, shuffle=<span class="hljs-literal">True</span>, generator=order):
+            opt.zero_grad()
+            loss_fn(net(xb), yb).backward()
+            opt.step()
+        curve.append(full_loss(net))
+    <span class="hljs-keyword">return</span> curve
+
+curves = {
+    <span class="hljs-string">&quot;SGD (lr 0.05)&quot;</span>: train(<span class="hljs-keyword">lambda</span> p: torch.optim.SGD(p, lr=<span class="hljs-number">0.05</span>)),
+    <span class="hljs-string">&quot;SGD + momentum 0.9 (lr 0.05)&quot;</span>: train(<span class="hljs-keyword">lambda</span> p: torch.optim.SGD(p, lr=<span class="hljs-number">0.05</span>, momentum=<span class="hljs-number">0.9</span>)),
+    <span class="hljs-string">&quot;Adam (lr 0.01)&quot;</span>: train(<span class="hljs-keyword">lambda</span> p: torch.optim.Adam(p, lr=<span class="hljs-number">0.01</span>)),
+}
+fig, ax = plt.subplots(figsize=(<span class="hljs-number">6.4</span>, <span class="hljs-number">3.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> (name, curve), color <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(curves.items(), [<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#7b5cfa&quot;</span>, <span class="hljs-string">&quot;#17a98c&quot;</span>]):
+    ax.plot(curve, label=name, color=color, lw=<span class="hljs-number">2.5</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{name:30s}</span> loss after 15 epochs: <span class="hljs-subst">{curve[-<span class="hljs-number">1</span>]:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+ax.set_xlabel(<span class="hljs-string">&quot;epoch&quot;</span>)
+ax.set_ylabel(<span class="hljs-string">&quot;loss on all 2000 points&quot;</span>)
+ax.legend()
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><pre class="text">SGD (lr 0.05)                  loss after 15 epochs: 0.305
+SGD + momentum 0.9 (lr 0.05)   loss after 15 epochs: 0.155
+Adam (lr 0.01)                 loss after 15 epochs: 0.149</pre><img src="../assets/out/ml-w5d4-optimizers-3d04511a.png" width="716" height="386" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<p>Plain SGD stalls on a plateau; momentum and Adam get past it. Swapping the optimizer is a one-line change.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · the overfitting curves</span><button type="button" class="btn-copy">Copy</button></div><pre><code>T = <span class="hljs-keyword">lambda</span> a: torch.tensor(a, dtype=torch.float32)
+Xtr, ytr = make_moons(<span class="hljs-number">40</span>, noise=<span class="hljs-number">0.35</span>, random_state=<span class="hljs-number">2</span>)
+Xva, yva = make_moons(<span class="hljs-number">300</span>, noise=<span class="hljs-number">0.35</span>, random_state=<span class="hljs-number">102</span>)
+Xte, yte = make_moons(<span class="hljs-number">2000</span>, noise=<span class="hljs-number">0.35</span>, random_state=<span class="hljs-number">202</span>)
+Xtr, Xva, Xte = T(Xtr), T(Xva), T(Xte)
+ytr, yva, yte = T(ytr).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>), T(yva).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>), T(yte).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">big_net</span>():
+    torch.manual_seed(<span class="hljs-number">0</span>)
+    <span class="hljs-keyword">return</span> torch.nn.Sequential(torch.nn.Linear(<span class="hljs-number">2</span>, <span class="hljs-number">64</span>), torch.nn.Tanh(), torch.nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">64</span>), torch.nn.Tanh(), torch.nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">1</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">one_epoch</span>(<span class="hljs-params">net, opt, order</span>):
+    perm = torch.randperm(<span class="hljs-built_in">len</span>(Xtr), generator=order)
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">0</span>, <span class="hljs-built_in">len</span>(Xtr), <span class="hljs-number">8</span>):                <span class="hljs-comment"># batches of 8</span>
+        idx = perm[i:i + <span class="hljs-number">8</span>]
+        opt.zero_grad()
+        loss_fn(net(Xtr[idx]), ytr[idx]).backward()
+        opt.step()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">evaluate</span>(<span class="hljs-params">net, X, y</span>):
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        out = net(X)
+        <span class="hljs-keyword">return</span> loss_fn(out, y).item(), ((out &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">float</span>() == y).<span class="hljs-built_in">float</span>().mean().item()
+
+net = big_net()
+opt = torch.optim.Adam(net.parameters(), lr=<span class="hljs-number">0.002</span>)
+order = torch.Generator().manual_seed(<span class="hljs-number">0</span>)
+train_curve, val_curve = [], []
+<span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">400</span>):
+    train_curve.append(evaluate(net, Xtr, ytr)[<span class="hljs-number">0</span>])
+    val_curve.append(evaluate(net, Xva, yva)[<span class="hljs-number">0</span>])
+    one_epoch(net, opt, order)
+
+best = <span class="hljs-built_in">int</span>(np.argmin(val_curve))
+fig, ax = plt.subplots(figsize=(<span class="hljs-number">6.4</span>, <span class="hljs-number">3.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+ax.plot(train_curve, color=<span class="hljs-string">&quot;#17a98c&quot;</span>, lw=<span class="hljs-number">2.5</span>, label=<span class="hljs-string">&quot;training loss&quot;</span>)
+ax.plot(val_curve, color=<span class="hljs-string">&quot;#7b5cfa&quot;</span>, lw=<span class="hljs-number">2.5</span>, label=<span class="hljs-string">&quot;validation loss&quot;</span>)
+ax.axvline(best, color=<span class="hljs-string">&quot;#2c2842&quot;</span>, ls=<span class="hljs-string">&quot;--&quot;</span>, lw=<span class="hljs-number">1.2</span>)
+ax.annotate(<span class="hljs-string">f&quot;lowest validation loss: epoch <span class="hljs-subst">{best}</span>&quot;</span>, (best, val_curve[best]), xytext=(best + <span class="hljs-number">20</span>, <span class="hljs-number">0.63</span>),
+            arrowprops=<span class="hljs-built_in">dict</span>(arrowstyle=<span class="hljs-string">&quot;-&gt;&quot;</span>, color=<span class="hljs-string">&quot;#2c2842&quot;</span>, lw=<span class="hljs-number">1.2</span>))
+ax.set_xlabel(<span class="hljs-string">&quot;epochs trained&quot;</span>)
+ax.set_ylabel(<span class="hljs-string">&quot;loss&quot;</span>)
+ax.legend()
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;lowest validation loss after <span class="hljs-subst">{best}</span> epochs; test accuracy after all 400 epochs: <span class="hljs-subst">{evaluate(net, Xte, yte)[<span class="hljs-number">1</span>]:<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w5d4-curves-17c66fad.png" width="716" height="386" alt="Figure produced by this code" loading="lazy"><pre class="text">lowest validation loss after 89 epochs; test accuracy after all 400 epochs: 0.725</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: early stopping</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Add early stopping to the training loop with a patience of 20 epochs. Keep a copy of the best weights and put them back at the end. Does the test accuracy beat the 0.725 from training all 400 epochs?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>net = big_net()
+opt = torch.optim.Adam(net.parameters(), lr=<span class="hljs-number">0.002</span>)
+order = torch.Generator().manual_seed(<span class="hljs-number">0</span>)
+patience = <span class="hljs-number">20</span>
+best_loss, best_epoch, best_state, waited = <span class="hljs-built_in">float</span>(<span class="hljs-string">&quot;inf&quot;</span>), <span class="hljs-number">0</span>, <span class="hljs-literal">None</span>, <span class="hljs-number">0</span>
+<span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">400</span>):
+    val_loss = evaluate(net, Xva, yva)[<span class="hljs-number">0</span>]
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> if val_loss &lt; best_loss, remember it, the epoch and a copy of the weights</span>
+    <span class="hljs-comment">#       (copy.deepcopy(net.state_dict())), and set waited back to 0. Otherwise add 1 to waited.</span>
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> break out of the loop once waited reaches patience</span>
+    one_epoch(net, opt, order)
+<span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> put the best weights back: net.load_state_dict(best_state)</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;stopped at epoch <span class="hljs-subst">{epoch}</span>, kept the weights from epoch <span class="hljs-subst">{best_epoch}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;test accuracy: <span class="hljs-subst">{evaluate(net, Xte, yte)[<span class="hljs-number">1</span>]:<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>Inside the loop: <code>if val_loss &lt; best_loss:</code> store <code>best_loss</code>, <code>best_epoch</code>, <code>best_state = copy.deepcopy(net.state_dict())</code> and set <code>waited = 0</code>; <code>else:</code> add one to <code>waited</code> and <code>break</code> when it reaches <code>patience</code>. Without <code>deepcopy</code> you'd store a reference to weights that keep changing.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>net = big_net()
+opt = torch.optim.Adam(net.parameters(), lr=<span class="hljs-number">0.002</span>)
+order = torch.Generator().manual_seed(<span class="hljs-number">0</span>)
+patience = <span class="hljs-number">20</span>
+best_loss, best_epoch, best_state, waited = <span class="hljs-built_in">float</span>(<span class="hljs-string">&quot;inf&quot;</span>), <span class="hljs-number">0</span>, <span class="hljs-literal">None</span>, <span class="hljs-number">0</span>
+<span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">400</span>):
+    val_loss = evaluate(net, Xva, yva)[<span class="hljs-number">0</span>]
+    <span class="hljs-keyword">if</span> val_loss &lt; best_loss:
+        best_loss, best_epoch, waited = val_loss, epoch, <span class="hljs-number">0</span>
+        best_state = copy.deepcopy(net.state_dict())   <span class="hljs-comment"># a real copy, not a reference that keeps changing</span>
+    <span class="hljs-keyword">else</span>:
+        waited += <span class="hljs-number">1</span>
+        <span class="hljs-keyword">if</span> waited &gt;= patience:
+            <span class="hljs-keyword">break</span>
+    one_epoch(net, opt, order)
+net.load_state_dict(best_state)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;stopped at epoch <span class="hljs-subst">{epoch}</span>, kept the weights from epoch <span class="hljs-subst">{best_epoch}</span> (validation loss <span class="hljs-subst">{best_loss:<span class="hljs-number">.3</span>f}</span>)&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;test accuracy with early stopping: <span class="hljs-subst">{evaluate(net, Xte, yte)[<span class="hljs-number">1</span>]:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;training all 400 epochs gave 0.725: stopping early kept the boundary smooth, and it took a quarter of the time.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">stopped at epoch 109, kept the weights from epoch 89 (validation loss 0.349)
+test accuracy with early stopping: 0.852
+training all 400 epochs gave 0.725: stopping early kept the boundary smooth, and it took a quarter of the time.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w5d4" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">You have 1,000 training examples and a batch size of 50. How many steps make one epoch?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's the batch size, not the number of batches."><span class="key">A</span><span>50</span></button><button type="button" class="opt" data-i="1" data-why="1,000 / 50 = 20 batches, one step each."><span class="key">B</span><span>20</span></button><button type="button" class="opt" data-i="2" data-why="That would be a batch size of 1."><span class="key">C</span><span>1,000</span></button><button type="button" class="opt" data-i="3" data-why="That's full-batch gradient descent."><span class="key">D</span><span>1</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w5d4" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">In a long, narrow valley, why does momentum beat plain gradient descent?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Both can use the same η; the difference is the running average."><span class="key">A</span><span>It uses a bigger learning rate</span></button><button type="button" class="opt" data-i="1" data-why="That's the rolling-ball picture."><span class="key">B</span><span>The zigzags across the valley cancel out in the running average, while the steady downhill direction adds up</span></button><button type="button" class="opt" data-i="2" data-why="No: it only uses first derivatives, like gradient descent."><span class="key">C</span><span>It computes exact second derivatives</span></button><button type="button" class="opt" data-i="3" data-why="It still needs a gradient every step."><span class="key">D</span><span>It skips the backward pass</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w5d4" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Training loss is still falling, but validation loss has been rising for 30 epochs. What's happening?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Then both losses would just fall slowly."><span class="key">A</span><span>The learning rate is too small</span></button><button type="button" class="opt" data-i="1" data-why="Classic overfitting. Early stopping returns to the weights with the lowest validation loss."><span class="key">B</span><span>The network is memorizing the training points: time to stop and keep the best weights</span></button><button type="button" class="opt" data-i="2" data-why="Rising validation loss is the expected sign of overfitting."><span class="key">C</span><span>The validation set is broken</span></button><button type="button" class="opt" data-i="3" data-why="More epochs would make the overfitting worse."><span class="key">D</span><span>Training needs more epochs</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Real training steps with cheap, noisy mini-batch gradients, uses momentum or Adam to move sensibly through narrow valleys, and watches the validation loss so it can stop, and keep the best weights, before the network memorizes its training data.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Quantum circuits are trained with the same optimizers: Adam is the default in many quantum machine learning papers. And their gradients are noisy by nature, because every expectation value is estimated from a finite number of shots. Shot noise plays the role that mini-batch noise plays here.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">ISLP section 10.7.2 (regularization and stochastic gradient descent). The free online book <em>Deep Learning</em> by Goodfellow, Bengio and Courville covers early stopping in section 7.8 (including why it acts like ridge regularization), and SGD, momentum and Adam in sections 8.3 and 8.5.</p>
+</div></div>
+<p class="muted mb0">Next in Machine Learning: the week 5 project, a network that reads handwritten digits, including the ones you draw.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w5d4">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w5d5.html"><img src="../assets/icons/digit.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Project: read handwritten digits</span></span></a><div class="also-today" data-date="2026-11-19" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w5d3.html">← Backprop</a><a href="../ml/w5d5.html">Digit reader →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

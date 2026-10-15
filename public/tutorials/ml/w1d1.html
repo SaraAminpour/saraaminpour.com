@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The four ways machines learn · Machine Learning · Quantum Path</title>
+<meta name="description" content="A map of machine learning before we zoom in: supervised, unsupervised, semi-supervised and reinforcement learning.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w1d1.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-1">Week 1 · Learning from examples</a><span class="muted">›</span><span class="chip plain">Day 1</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/map.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>The four ways machines learn</h1>
+      <p class="subtitle">A map of machine learning before we zoom in: supervised, unsupervised, semi-supervised and reinforcement learning.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 11 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w1d1.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>See a model as a function with knobs, and learning as choosing the knobs</span></li><li><span>Tell the four kinds of learning apart from a one-line description</span></li><li><span>Load a real dataset in Python and find its features and labels</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 11 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Hello! Let's draw the map</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-wave.svg" alt="Qubi, your guide"><div class="speech">
+<p><b>Hi, I'm Qubi.</b> I'm a qubit, but I love machine learning too, so I'll walk with you through this whole tutorial: seven weeks, one small lesson each weekday. Every lesson has an idea, something to play with, real code, a small exercise and a quick check, in about ten minutes.</p>
+<p class="mb0">Think about how you learned what a cat is. Someone pointed and said "cat!", many times, until you could do it yourself. That is one of the four ways machines learn too. Today we meet all four.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>A model is a function with knobs</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Almost every machine-learning method has the same shape. A <b>model</b> takes an input <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> and produces an output <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover accent="true"><mi>y</mi><mo>^</mo></mover></mrow><annotation encoding="application/x-tex">\hat{y}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1944em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1944em;"><span></span></span></span></span></span></span></span></span>. Inside it there are adjustable numbers, the <b>parameters</b> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi></mrow><annotation encoding="application/x-tex">\theta</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span></span></span></span> (theta). Think of them as knobs:</p>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mover accent="true"><mi>y</mi><mo>^</mo></mover><mo>=</mo><msub><mi>f</mi><mi>θ</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\hat{y} = f_\theta(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord accent"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.1944em;"><span class="mord">^</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1944em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1076em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.02778em;">θ</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span></span></div>
+<p><b>Learning</b> means turning the knobs using experience (data) until the model behaves well. Data usually looks like a table: each row is one <b>example</b>, each column is a <b>feature</b>, and sometimes there is an answer column, the <b>label</b> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>.</p>
+
+<div data-widget="knob"></div>
+
+<p>That was one knob. A neural network can have millions. The idea stays the same.</p>
+<p>What changes between methods is <em>what kind of experience</em> the learner gets. That gives the four families:</p>
+
+<div class="grid-2">
+  <div class="callout ml" style="margin:0"><img src="../assets/icons/target.svg" alt=""><div><span class="title">Supervised</span>Examples come <b>with answers</b>. Learn the rule <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>→</mo><mi>y</mi></mrow><annotation encoding="application/x-tex">x \to y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span>. If <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span> is a category (spam / not spam) it is <b>classification</b>; if <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span></span></span></span> is a number (a price) it is <b>regression</b>.</div></div>
+  <div class="callout tip" style="margin:0"><img src="../assets/icons/clusters.svg" alt=""><div><span class="title">Unsupervised</span><b>No answers</b> at all. Find structure on your own: groups (clustering), main directions (PCA), compact summaries (autoencoders).</div></div>
+  <div class="callout try" style="margin:0"><img src="../assets/icons/semi.svg" alt=""><div><span class="title">Semi-supervised</span><b>A few answers</b> plus lots of unlabeled data. The unlabeled data shows the shape; the few labels name the parts.</div></div>
+  <div class="callout link" style="margin:0"><img src="../assets/icons/maze.svg" alt=""><div><span class="title">Reinforcement</span><b>No answer key</b>, only <b>rewards</b>. An agent tries actions, sees what pays off, and learns a strategy (a <em>policy</em>).</div></div>
+</div>
+
+<div class="callout tip"><img src="../assets/icons/ui-calendar.svg" alt=""><div><span class="title">The plan for these seven weeks</span>
+<p>One topic per week: data and evaluation (week 1), regression and gradient descent (2), classification (3), kernels (4), neural networks (5), learning without labels (6) and reinforcement learning (7). All the optimizing is done in PyTorch.</p>
+<p class="mb0">Most first machine learning courses cover the same families, so this tutorial also works as a visual companion to one.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Sort the scenarios</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Pick a card, then pick the box it belongs in. On a laptop you can also drag. Every card gets a short explanation.</p>
+<div data-widget="sorter"></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Features and labels in Python</h2></div><span class="mins">3 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w1d1.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w1d1.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w1d1.ipynb" download>Download notebook</a></div></div>
+<p>Load the classic iris dataset: 150 flowers, 4 measurements each, and the species as the label.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · load the data</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_iris
+
+iris = load_iris()
+X, y = iris.data, iris.target        <span class="hljs-comment"># X: features, y: labels</span>
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;X shape:&quot;</span>, X.shape)            <span class="hljs-comment"># 150 flowers, 4 measurements each</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;features:&quot;</span>, iris.feature_names)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;labels:&quot;</span>, iris.target_names)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;first flower:&quot;</span>, X[<span class="hljs-number">0</span>], <span class="hljs-string">&quot;-&gt;&quot;</span>, iris.target_names[y[<span class="hljs-number">0</span>]])</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">X shape: (150, 4)
+features: ['sepal length (cm)', 'sepal width (cm)', 'petal length (cm)', 'petal width (cm)']
+labels: ['setosa' 'versicolor' 'virginica']
+first flower: [5.1 3.5 1.4 0.2] -&gt; setosa</pre></div></details></div>
+<p>Now look at the same flowers twice: once with labels (what a supervised learner sees) and once without (what an unsupervised learner sees).</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · two views</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+
+fig, (left, right) = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">9</span>, <span class="hljs-number">3.8</span>), sharex=<span class="hljs-literal">True</span>, sharey=<span class="hljs-literal">True</span>, layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> k, name <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(iris.target_names):
+    pick = y == k
+    left.scatter(X[pick, <span class="hljs-number">2</span>], X[pick, <span class="hljs-number">3</span>], s=<span class="hljs-number">36</span>, label=name)
+left.set_title(<span class="hljs-string">&quot;Supervised view: labels given&quot;</span>)
+left.legend(loc=<span class="hljs-string">&quot;upper left&quot;</span>)
+
+right.scatter(X[:, <span class="hljs-number">2</span>], X[:, <span class="hljs-number">3</span>], s=<span class="hljs-number">36</span>, color=<span class="hljs-string">&quot;#bcb7cb&quot;</span>)
+right.set_title(<span class="hljs-string">&quot;Unsupervised view: no labels&quot;</span>)
+
+<span class="hljs-keyword">for</span> ax <span class="hljs-keyword">in</span> (left, right):
+    ax.set_xlabel(<span class="hljs-string">&quot;petal length (cm)&quot;</span>)
+left.set_ylabel(<span class="hljs-string">&quot;petal width (cm)&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w1d1-views-660af10a.png" width="1002" height="430" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<p>Finally, the knob from the widget above, as code:</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · a model with one knob</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">tiny_model</span>(<span class="hljs-params">petal_length, threshold</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Predict 1 (setosa) when the petal is short, else 0.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">return</span> (petal_length &lt; threshold).astype(<span class="hljs-built_in">int</span>)
+
+is_setosa = (y == <span class="hljs-number">0</span>).astype(<span class="hljs-built_in">int</span>)
+<span class="hljs-keyword">for</span> threshold <span class="hljs-keyword">in</span> [<span class="hljs-number">1.5</span>, <span class="hljs-number">2.5</span>, <span class="hljs-number">4.0</span>]:
+    accuracy = np.mean(tiny_model(X[:, <span class="hljs-number">2</span>], threshold) == is_setosa)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;threshold = <span class="hljs-subst">{threshold:<span class="hljs-number">.1</span>f}</span> cm  -&gt;  accuracy = <span class="hljs-subst">{accuracy:<span class="hljs-number">.0</span>%}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">threshold = 1.5 cm  -&gt;  accuracy = 83%
+threshold = 2.5 cm  -&gt;  accuracy = 100%
+threshold = 4.0 cm  -&gt;  accuracy = 93%</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: let the computer turn the knob</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>In cell 3 you tried three thresholds by hand. Now make Python try <b>many</b>: every threshold from 1.0 to 6.0 cm in steps of 0.1. Print the range of thresholds that classify every flower correctly.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · the starting point in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>perfect = []
+<span class="hljs-keyword">for</span> threshold <span class="hljs-keyword">in</span> np.<span class="hljs-built_in">round</span>(np.arange(<span class="hljs-number">1.0</span>, <span class="hljs-number">6.01</span>, <span class="hljs-number">0.1</span>), <span class="hljs-number">1</span>):
+    accuracy = np.mean(tiny_model(X[:, <span class="hljs-number">2</span>], threshold) == is_setosa)
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> if the accuracy is perfect, remember this threshold in `perfect`</span>
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;perfect thresholds found:&quot;</span>, <span class="hljs-built_in">len</span>(perfect))</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>np.arange(1.0, 6.01, 0.1)</code> gives all the thresholds (the notebook rounds them to one decimal so that 2.0 really is 2.0). Keep the ones whose accuracy is exactly 1.0 in a list, then print the smallest and the largest.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>perfect = []
+<span class="hljs-keyword">for</span> threshold <span class="hljs-keyword">in</span> np.<span class="hljs-built_in">round</span>(np.arange(<span class="hljs-number">1.0</span>, <span class="hljs-number">6.01</span>, <span class="hljs-number">0.1</span>), <span class="hljs-number">1</span>):
+    accuracy = np.mean(tiny_model(X[:, <span class="hljs-number">2</span>], threshold) == is_setosa)
+    <span class="hljs-keyword">if</span> accuracy == <span class="hljs-number">1.0</span>:
+        perfect.append(threshold)
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{<span class="hljs-built_in">len</span>(perfect)}</span> perfect thresholds, from <span class="hljs-subst">{<span class="hljs-built_in">min</span>(perfect):<span class="hljs-number">.1</span>f}</span> cm to <span class="hljs-subst">{<span class="hljs-built_in">max</span>(perfect):<span class="hljs-number">.1</span>f}</span> cm&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;The longest setosa petal is <span class="hljs-subst">{X[y == <span class="hljs-number">0</span>, <span class="hljs-number">2</span>].<span class="hljs-built_in">max</span>()}</span> cm and the shortest of the others is &quot;</span>
+      <span class="hljs-string">f&quot;<span class="hljs-subst">{X[y != <span class="hljs-number">0</span>, <span class="hljs-number">2</span>].<span class="hljs-built_in">min</span>()}</span> cm: any threshold in that gap separates them.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">11 perfect thresholds, from 2.0 cm to 3.0 cm
+The longest setosa petal is 1.9 cm and the shortest of the others is 3.0 cm: any threshold in that gap separates them.</pre></div></details></div></details>
+<p class="small muted mb0">You just wrote a (very small) learning algorithm: search the knob's values and keep the ones that fit the data. Everything in the coming weeks is a smarter version of this search.</p>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="2" data-lesson="ml-w1d1" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">You have one million photos, and 500 of them are labeled cat or dog. Which kind of learning fits best?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That works, but it throws away 999,500 photos that could show the structure of the data."><span class="key">A</span><span>Supervised, using only the 500</span></button><button type="button" class="opt" data-i="1" data-why="You do have some labels, and you want cat/dog answers, so pure unsupervised wastes them."><span class="key">B</span><span>Unsupervised</span></button><button type="button" class="opt" data-i="2" data-why="A few labels plus lots of unlabeled data is exactly the semi-supervised setting."><span class="key">C</span><span>Semi-supervised</span></button><button type="button" class="opt" data-i="3" data-why="There is no agent taking actions and no reward here."><span class="key">D</span><span>Reinforcement</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w1d1" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">Predicting tomorrow's temperature (a number) from today's weather measurements is…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Classification predicts a category. A temperature is a number."><span class="key">A</span><span>Classification</span></button><button type="button" class="opt" data-i="1" data-why="Supervised learning with a numeric answer is regression."><span class="key">B</span><span>Regression</span></button><button type="button" class="opt" data-i="2" data-why="Clustering has no answers to learn from; here we have past temperatures."><span class="key">C</span><span>Clustering</span></button><button type="button" class="opt" data-i="3" data-why="No agent and no rewards, just inputs and a numeric answer."><span class="key">D</span><span>Reinforcement learning</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w1d1" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">What does a reinforcement-learning agent learn from?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That would be supervised learning."><span class="key">A</span><span>A table of correct answers</span></button><button type="button" class="opt" data-i="1" data-why="It acts, the environment answers with rewards, and it learns which actions pay off."><span class="key">B</span><span>Rewards it receives after taking actions</span></button><button type="button" class="opt" data-i="2" data-why="That sounds like clustering, which is unsupervised."><span class="key">C</span><span>The distances between unlabeled points</span></button><button type="button" class="opt" data-i="3" data-why="In RL nobody says what the right action was, only how well it went."><span class="key">D</span><span>A teacher who labels every step</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">A model is a function with knobs. <b>Supervised</b> learns from answers, <b>unsupervised</b> finds structure without them, <b>semi-supervised</b> mixes a few answers with lots of unlabeled data, and <b>reinforcement</b> learns from rewards.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">All four families show up in quantum machine learning. A quantum circuit can be the model whose knobs are rotation angles (supervised). Quantum states can be clustered or compressed (unsupervised). Labeled quantum experiments are expensive, so a few labels plus many unlabeled shots is common (semi-supervised). And an agent can tune control pulses, rewarded by how close the result is to the target state (reinforcement).</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0"><i>An Introduction to Statistical Learning</i> (ISLP, a free textbook), chapter 2.1: "What is statistical learning?". It uses the same picture of a model as a function <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span></span></span></span> that we estimate from data.</p>
+</div></div>
+<p class="muted mb0">Next in Machine Learning: how real data becomes numbers a computer can learn from, and your first PyTorch tensors.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w1d1">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w1d2.html"><img src="../assets/icons/table.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Data as numbers: features, labels and tensors</span></span></a><div class="also-today" data-date="2026-10-19" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><span></span><a href="../ml/w1d2.html">Data as numbers →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

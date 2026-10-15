@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hybrid training with PyTorch · Quantum Machine Learning · Quantum Path</title>
+<meta name="description" content="Wrap a circuit as a PyTorch layer: circuits run forward, the parameter-shift rule runs backward, and the chain rule connects it to classical layers. Then ask which part is doing the work.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qml-w3d3.js?v=mva52clc"></script>
+</head>
+<body class="track-qml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html" aria-current="page"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qml/index.html">Quantum Machine Learning</a><span class="muted">›</span><a href="../qml/index.html#week-3">Week 3 · Variational quantum classifiers</a><span class="muted">›</span><span class="chip plain">Day 3</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qml"><img src="../assets/icons/hybrid.svg" alt=""></div>
+    <div>
+      <span class="chip qml"><span class="dot"></span>Quantum Machine Learning</span>
+      <h1>Hybrid training with PyTorch</h1>
+      <p class="subtitle">Wrap a circuit as a PyTorch layer: circuits run forward, the parameter-shift rule runs backward, and the chain rule connects it to classical layers. Then ask which part is doing the work.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 15 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qml-w3d3.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Write a PyTorch layer whose backward pass is the parameter-shift rule, for its weights and its input angles</span></li><li><span>Train a hybrid model, a classical encoder, a circuit and a classical scale, with mini-batches and Adam</span></li><li><span>Test whether the circuit pulls its weight, with a classical twin and a frozen encoder</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 15 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Let PyTorch keep the books</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">On Monday you wrote the training loop by hand: shifts, chain rule, update. That's fine for 8 weights, but real models mix circuits with classical layers holding hundreds of weights. PyTorch (ML week 2) already knows how to differentiate classical layers. All it needs is to be told how to differentiate a circuit.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>A circuit as a PyTorch layer</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>PyTorch can train anything built from pieces that know two things: how to compute their output (<b>forward</b>) and how to pass gradients back to their inputs (<b>backward</b>). Its chain rule does the rest. A circuit can be such a piece:</p>
+<ol class="task-list">
+<li><b>Forward:</b> run one circuit per data point and return <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">⟨</mo><mi>Z</mi><mo stretchy="false">⟩</mo></mrow><annotation encoding="application/x-tex">\langle Z\rangle</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mclose">⟩</span></span></span></span>.</li>
+<li><b>Backward:</b> PyTorch hands in <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∂</mi><mi>L</mi><mi mathvariant="normal">/</mi><mi mathvariant="normal">∂</mi><mo stretchy="false">⟨</mo><mi>Z</mi><mo stretchy="false">⟩</mo></mrow><annotation encoding="application/x-tex">\partial L/\partial\langle Z\rangle</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord" style="margin-right:0.05556em;">∂</span><span class="mord mathnormal">L</span><span class="mord">/</span><span class="mord" style="margin-right:0.05556em;">∂</span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mclose">⟩</span></span></span></span> for every point. Multiply it by the circuit's own derivatives, which the parameter-shift rule gives with two shifted runs for each weight and for each input angle.</li>
+</ol>
+<p>The input angles matter. Their gradients are what flow on, backwards, into a classical layer in front of the circuit, and that's how a <b>hybrid model</b> learns its own encoding. Today's model reads 8×8 images of handwritten 3s and 8s:</p>
+<div class="math-card"><div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>pixels</mtext><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext> classical </mtext></mpadded></mover><mo stretchy="false">(</mo><msub><mi>θ</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>θ</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext> quantum </mtext></mpadded></mover><mo stretchy="false">⟨</mo><mi>Z</mi><mo stretchy="false">⟩</mo><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext> classical </mtext></mpadded></mover><mi>p</mi><mo stretchy="false">(</mo><mn>8</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\text{pixels} \xrightarrow{\ \text{classical}\ } (\theta_1, \theta_2) \xrightarrow{\ \text{quantum}\ } \langle Z\rangle \xrightarrow{\ \text{classical}\ } p(8)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.3025em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord">pixels</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1081em;"><span style="top:-3.322em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mspace mtight"><span class="mtight"> </span></span><span class="mord text mtight"><span class="mord mtight">classical</span></span><span class="mspace mtight"><span class="mtight"> </span></span></span></span></span><span class="svg-align" style="top:-2.689em;"><span class="pstrut" style="height:2.7em;"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3026em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.0278em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.0526em;"><span style="top:-3.322em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mspace mtight"><span class="mtight"> </span></span><span class="mord text mtight"><span class="mord mtight">quantum</span></span><span class="mspace mtight"><span class="mtight"> </span></span></span></span></span><span class="svg-align" style="top:-2.689em;"><span class="pstrut" style="height:2.7em;"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3581em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1081em;"><span style="top:-3.322em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mspace mtight"><span class="mtight"> </span></span><span class="mord text mtight"><span class="mord mtight">classical</span></span><span class="mspace mtight"><span class="mtight"> </span></span></span></span></span><span class="svg-align" style="top:-2.689em;"><span class="pstrut" style="height:2.7em;"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">p</span><span class="mopen">(</span><span class="mord">8</span><span class="mclose">)</span></span></span></span></span></div></div>
+<p>The classical encoder has 130 weights (a linear layer from 64 pixels to 2 numbers, squashed into angles by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mi>π</mi><mn>2</mn></mfrac><mi>tanh</mi><mo>⁡</mo></mrow><annotation encoding="application/x-tex">\frac{\pi}{2}\tanh</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0404em;vertical-align:-0.345em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6954em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.03588em;">π</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.345em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mop">tanh</span></span></span></span>), the circuit has 8, and the scale <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo stretchy="false">⟨</mo><mi>Z</mi><mo stretchy="false">⟩</mo><mo>+</mo><mi>b</mi></mrow><annotation encoding="application/x-tex">a\langle Z\rangle + b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">a</span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> has 2. Training is ordinary deep learning: mini-batches of 32 images, the Adam optimizer, binary cross-entropy. Each image costs <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>+</mo><mn>2</mn><mtext> </mtext><mo stretchy="false">(</mo><mn>8</mn><mo>+</mo><mn>2</mn><mo stretchy="false">)</mo><mo>=</mo><mn>21</mn></mrow><annotation encoding="application/x-tex">1 + 2\,(8 + 2) = 21</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">(</span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">21</span></span></span></span> circuit runs per step.</p>
+<p><b>The honest question.</b> With 130 classical weights in front of 8 quantum ones, who is doing the work? Two experiments can tell: replace the circuit by a classical twin of the same size, and freeze the encoder at its random starting values.</p>
+<p class="big-idea">A circuit becomes a PyTorch layer when its backward pass is the parameter-shift rule, for its weights and its inputs. The chain rule then trains the whole hybrid, and ablations show which part earns its place.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Follow one training step</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>All 24 images go through the model together, as one batch. Press <b>Forward</b>, <b>Backward</b> and <b>Step</b> in turn, following one image through the cards. Then let it train.</p>
+<div data-widget="hybrid"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">After Backward, look at the quantum card: 8 weight gradients, and 20 extra circuit runs for this one image. Then press <b>Train 30 steps</b> and watch the bars under the images: blue means "an 8", orange "a 3". How many circuit runs did 30 steps cost? On hardware, each of those would be hundreds of shots.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The hybrid in PyTorch and Qiskit</h2></div><span class="mins">3 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qml-w3d3.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qml/qml-w3d3.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qml/qml-w3d3.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · a circuit as a PyTorch layer, checked</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">from</span> torch <span class="hljs-keyword">import</span> nn
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit
+<span class="hljs-keyword">from</span> qiskit.circuit <span class="hljs-keyword">import</span> ParameterVector
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> SparsePauliOp
+<span class="hljs-keyword">from</span> qiskit.primitives <span class="hljs-keyword">import</span> StatevectorEstimator
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+LAYERS = <span class="hljs-number">2</span>
+x, w = ParameterVector(<span class="hljs-string">&quot;x&quot;</span>, <span class="hljs-number">2</span>), ParameterVector(<span class="hljs-string">&quot;w&quot;</span>, <span class="hljs-number">4</span> * LAYERS)
+circuit = QuantumCircuit(<span class="hljs-number">2</span>)
+circuit.ry(x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+circuit.ry(x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)
+<span class="hljs-keyword">for</span> l <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(LAYERS):
+    circuit.ry(w[<span class="hljs-number">4</span> * l], <span class="hljs-number">0</span>)
+    circuit.rz(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">1</span>], <span class="hljs-number">0</span>)
+    circuit.ry(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">2</span>], <span class="hljs-number">1</span>)
+    circuit.rz(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">3</span>], <span class="hljs-number">1</span>)
+    circuit.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+observable, estimator = SparsePauliOp(<span class="hljs-string">&quot;ZI&quot;</span>), StatevectorEstimator()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">run</span>(<span class="hljs-params">jobs</span>):
+    <span class="hljs-string">&quot;&quot;&quot;jobs: list of (angles of shape (batch, 2), weights). Returns ⟨Z⟩ of qubit 1, shape (len(jobs), batch).&quot;&quot;&quot;</span>
+    rows = np.array([np.concatenate([W, a]) <span class="hljs-keyword">for</span> A, W <span class="hljs-keyword">in</span> jobs <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> A])
+    evs = estimator.run([(circuit, observable, rows)]).result()[<span class="hljs-number">0</span>].data.evs
+    <span class="hljs-keyword">return</span> evs.reshape(<span class="hljs-built_in">len</span>(jobs), -<span class="hljs-number">1</span>)
+
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">QuantumLayer</span>(torch.autograd.Function):
+    <span class="hljs-string">&quot;&quot;&quot;Forward: one circuit per point. Backward: the parameter-shift rule, for the weights AND the input angles.&quot;&quot;&quot;</span>
+
+<span class="hljs-meta">    @staticmethod</span>
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">ctx, angles, weights</span>):
+        ctx.save_for_backward(angles, weights)
+        <span class="hljs-keyword">return</span> torch.tensor(run([(angles.detach().numpy(), weights.detach().numpy())])[<span class="hljs-number">0</span>], dtype=torch.float32)
+
+<span class="hljs-meta">    @staticmethod</span>
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">backward</span>(<span class="hljs-params">ctx, grad_out</span>):
+        A, W = (t.detach().numpy().astype(np.float64) <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> ctx.saved_tensors)
+        jobs = []
+        <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(W)):                                   <span class="hljs-comment"># shift one weight, for every point at once</span>
+            <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> (np.pi / <span class="hljs-number">2</span>, -np.pi / <span class="hljs-number">2</span>):
+                Wk = W.copy()
+                Wk[k] += s
+                jobs.append((A, Wk))
+        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(A.shape[<span class="hljs-number">1</span>]):                               <span class="hljs-comment"># shift one input angle, for every point at once</span>
+            <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> (np.pi / <span class="hljs-number">2</span>, -np.pi / <span class="hljs-number">2</span>):
+                Aj = A.copy()
+                Aj[:, j] += s
+                jobs.append((Aj, W))
+        V = run(jobs)
+        d = (V[<span class="hljs-number">0</span>::<span class="hljs-number">2</span>] - V[<span class="hljs-number">1</span>::<span class="hljs-number">2</span>]) / <span class="hljs-number">2</span>                               <span class="hljs-comment"># (weights + inputs, batch) partial derivatives</span>
+        g = grad_out.numpy()
+        grad_w = d[: <span class="hljs-built_in">len</span>(W)] @ g                                  <span class="hljs-comment"># each weight is shared by the whole batch: sum</span>
+        grad_a = (d[<span class="hljs-built_in">len</span>(W):] * g).T                               <span class="hljs-comment"># each angle belongs to one point</span>
+        QuantumLayer.runs += <span class="hljs-built_in">len</span>(A) * (<span class="hljs-number">1</span> + <span class="hljs-built_in">len</span>(jobs))
+        <span class="hljs-keyword">return</span> torch.tensor(grad_a, dtype=torch.float32), torch.tensor(grad_w, dtype=torch.float32)
+
+QuantumLayer.runs = <span class="hljs-number">0</span>
+
+<span class="hljs-comment"># check the backward pass against finite differences</span>
+A = torch.tensor([[<span class="hljs-number">0.3</span>, -<span class="hljs-number">0.7</span>], [<span class="hljs-number">1.1</span>, <span class="hljs-number">0.4</span>]], requires_grad=<span class="hljs-literal">True</span>)
+Wt = torch.tensor(np.random.default_rng(<span class="hljs-number">0</span>).normal(size=<span class="hljs-number">4</span> * LAYERS), dtype=torch.float32, requires_grad=<span class="hljs-literal">True</span>)
+QuantumLayer.apply(A, Wt).<span class="hljs-built_in">sum</span>().backward()
+eps = <span class="hljs-number">1e-3</span>
+up, down = Wt.detach().numpy().astype(np.float64), Wt.detach().numpy().astype(np.float64)
+up[<span class="hljs-number">0</span>] += eps
+down[<span class="hljs-number">0</span>] -= eps
+numeric = (run([(A.detach().numpy(), up)])[<span class="hljs-number">0</span>].<span class="hljs-built_in">sum</span>() - run([(A.detach().numpy(), down)])[<span class="hljs-number">0</span>].<span class="hljs-built_in">sum</span>()) / (<span class="hljs-number">2</span> * eps)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;d(sum)/d w0: parameter shift <span class="hljs-subst">{Wt.grad[<span class="hljs-number">0</span>].item():<span class="hljs-number">.5</span>f}</span>, central finite difference <span class="hljs-subst">{numeric:<span class="hljs-number">.5</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;gradients for the input angles:\n&quot;</span>, A.grad.numpy().<span class="hljs-built_in">round</span>(<span class="hljs-number">4</span>))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">d(sum)/d w0: parameter shift 0.04022, central finite difference 0.04022
+gradients for the input angles:
+ [[-0.4649 -0.7357]
+ [ 0.5051 -0.3358]]</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · encoder, circuit, scale</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_digits
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+digits = load_digits()
+mask = np.isin(digits.target, [<span class="hljs-number">3</span>, <span class="hljs-number">8</span>])
+X_all = digits.data[mask] / <span class="hljs-number">16.0</span>
+y_all = (digits.target[mask] == <span class="hljs-number">8</span>).astype(np.float32)
+X_tr, X_te, y_tr, y_te = train_test_split(X_all, y_all, test_size=<span class="hljs-number">0.3</span>, random_state=<span class="hljs-number">0</span>, stratify=y_all)
+X_tr, X_te = torch.tensor(X_tr, dtype=torch.float32), torch.tensor(X_te, dtype=torch.float32)
+y_tr, y_te = torch.tensor(y_tr), torch.tensor(y_te)
+
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">Hybrid</span>(nn.Module):
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):
+        <span class="hljs-built_in">super</span>().__init__()
+        <span class="hljs-variable language_">self</span>.encoder = nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">2</span>)                                  <span class="hljs-comment"># classical: 64 pixels → 2 numbers</span>
+        <span class="hljs-variable language_">self</span>.weights = nn.Parameter(<span class="hljs-number">0.6</span> * torch.randn(<span class="hljs-number">4</span> * LAYERS))       <span class="hljs-comment"># quantum: 8 rotation angles</span>
+        <span class="hljs-variable language_">self</span>.scale = nn.Linear(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>)                                     <span class="hljs-comment"># classical: a⟨Z⟩ + b</span>
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, X</span>):
+        angles = (np.pi / <span class="hljs-number">2</span>) * torch.tanh(<span class="hljs-variable language_">self</span>.encoder(X))               <span class="hljs-comment"># squash into [-π/2, π/2]</span>
+        z = QuantumLayer.apply(angles, <span class="hljs-variable language_">self</span>.weights)
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">self</span>.scale(z.unsqueeze(<span class="hljs-number">1</span>)).squeeze(<span class="hljs-number">1</span>)                     <span class="hljs-comment"># a logit: p = sigmoid(logit)</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">fit</span>(<span class="hljs-params">model, epochs=<span class="hljs-number">15</span>, lr=<span class="hljs-number">0.05</span>, seed=<span class="hljs-number">0</span>, report=<span class="hljs-literal">True</span></span>):
+    torch.manual_seed(seed)
+    optimizer = torch.optim.Adam([p <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> model.parameters() <span class="hljs-keyword">if</span> p.requires_grad], lr=lr)
+    loss_fn = nn.BCEWithLogitsLoss()
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(epochs):
+        <span class="hljs-keyword">for</span> batch <span class="hljs-keyword">in</span> torch.randperm(<span class="hljs-built_in">len</span>(X_tr)).split(<span class="hljs-number">32</span>):              <span class="hljs-comment"># mini-batches of 32 images</span>
+            optimizer.zero_grad()
+            loss = loss_fn(model(X_tr[batch]), y_tr[batch])
+            loss.backward()                                              <span class="hljs-comment"># classical autograd + parameter shift</span>
+            optimizer.step()
+        <span class="hljs-keyword">if</span> report <span class="hljs-keyword">and</span> epoch % <span class="hljs-number">5</span> == <span class="hljs-number">4</span>:
+            <span class="hljs-keyword">with</span> torch.no_grad():
+                acc = ((model(X_te) &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">float</span>() == y_te).<span class="hljs-built_in">float</span>().mean().item()
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;epoch <span class="hljs-subst">{epoch + <span class="hljs-number">1</span>:2d}</span>: last batch loss <span class="hljs-subst">{loss.item():<span class="hljs-number">.3</span>f}</span>, test accuracy <span class="hljs-subst">{acc:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        <span class="hljs-keyword">return</span> ((model(X_te) &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">float</span>() == y_te).<span class="hljs-built_in">float</span>().mean().item()
+
+torch.manual_seed(<span class="hljs-number">0</span>)
+hybrid = Hybrid()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;parameters: classical&quot;</span>, <span class="hljs-built_in">sum</span>(p.numel() <span class="hljs-keyword">for</span> n, p <span class="hljs-keyword">in</span> hybrid.named_parameters() <span class="hljs-keyword">if</span> n != <span class="hljs-string">&quot;weights&quot;</span>), <span class="hljs-string">&quot;+ quantum&quot;</span>, hybrid.weights.numel())</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">parameters: classical 132 + quantum 8</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · mini-batches and Adam</span><button type="button" class="btn-copy">Copy</button></div><pre><code>QuantumLayer.runs = <span class="hljs-number">0</span>
+acc_hybrid = fit(hybrid)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;hybrid test accuracy: <span class="hljs-subst">{acc_hybrid:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;circuits run while training: <span class="hljs-subst">{QuantumLayer.runs:,}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">epoch  5: last batch loss 0.098, test accuracy 0.991
+epoch 10: last batch loss 0.037, test accuracy 0.991
+epoch 15: last batch loss 0.020, test accuracy 0.991
+hybrid test accuracy: 0.991
+circuits run while training: 78,435</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · the classical twin</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">class</span> <span class="hljs-title class_">Twin</span>(nn.Module):
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):
+        <span class="hljs-built_in">super</span>().__init__()
+        <span class="hljs-variable language_">self</span>.encoder = nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">2</span>)
+        <span class="hljs-variable language_">self</span>.middle = nn.Sequential(nn.Tanh(), nn.Linear(<span class="hljs-number">2</span>, <span class="hljs-number">2</span>), nn.Tanh(), nn.Linear(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>))   <span class="hljs-comment"># 9 parameters, like the circuit&#x27;s 8 + scale</span>
+
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, X</span>):
+        <span class="hljs-keyword">return</span> <span class="hljs-variable language_">self</span>.middle(<span class="hljs-variable language_">self</span>.encoder(X)).squeeze(<span class="hljs-number">1</span>)
+
+torch.manual_seed(<span class="hljs-number">0</span>)
+acc_twin = fit(Twin(), report=<span class="hljs-literal">False</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;classical twin test accuracy: <span class="hljs-subst">{acc_twin:<span class="hljs-number">.3</span>f}</span>   (hybrid: <span class="hljs-subst">{acc_hybrid:<span class="hljs-number">.3</span>f}</span>)&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">classical twin test accuracy: 0.991   (hybrid: 0.991)</pre></div></details></div>
+<p>Cell 1 checks the hand-written backward pass against a finite difference before trusting it, a good habit for any gradient you write yourself. In cell 3 the hybrid reaches 99% on the test images after about 78,000 circuit runs. In cell 4 the classical twin, with the same encoder and 9 classical weights where the circuit was, reaches the same 99%.</p>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: freeze the encoder</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Keep the classical encoder at its random starting weights and train only the circuit and the scale. What test accuracy do you get, and what does it tell you?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>torch.manual_seed(<span class="hljs-number">0</span>)
+frozen = Hybrid()
+<span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> freeze frozen.encoder&#x27;s parameters, train with fit(frozen), and print the test accuracy</span></code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>frozen.encoder.requires_grad_(False)</code> stops the encoder's weights from changing, and <code>fit</code> only hands the trainable parameters to Adam.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>torch.manual_seed(<span class="hljs-number">0</span>)
+frozen = Hybrid()
+frozen.encoder.requires_grad_(<span class="hljs-literal">False</span>)                       <span class="hljs-comment"># a random, fixed 64 → 2 projection</span>
+acc_frozen = fit(frozen, report=<span class="hljs-literal">False</span>)
+torch.manual_seed(<span class="hljs-number">0</span>)
+frozen_twin = Twin()
+frozen_twin.encoder.requires_grad_(<span class="hljs-literal">False</span>)                  <span class="hljs-comment"># the same experiment for the classical twin</span>
+acc_frozen_twin = fit(frozen_twin, report=<span class="hljs-literal">False</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;frozen encoder, quantum middle  : test accuracy <span class="hljs-subst">{acc_frozen:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;frozen encoder, classical middle: test accuracy <span class="hljs-subst">{acc_frozen_twin:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;trained encoder, either middle  : <span class="hljs-subst">{acc_hybrid:<span class="hljs-number">.3</span>f}</span> and <span class="hljs-subst">{acc_twin:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The trained encoder does most of the work: it learns which two numbers separate 3s from 8s,&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;and after that almost any small model, quantum or classical, finishes the job.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">frozen encoder, quantum middle  : test accuracy 0.778
+frozen encoder, classical middle: test accuracy 0.778
+trained encoder, either middle  : 0.991 and 0.991
+The trained encoder does most of the work: it learns which two numbers separate 3s from 8s,
+and after that almost any small model, quantum or classical, finishes the job.</pre></div></details></div></details>
+<p>With a random projection, the circuit and the classical twin get stuck at exactly the same 78%. The trained encoder is where the skill lives. That doesn't make hybrid models useless, but a claim that a hybrid works because of its quantum part has to show it, for example with these two experiments.</p>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qml-w3d3" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Why does the quantum layer's backward pass also return gradients for its input angles?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Inputs alone don't need gradients; what matters is whether something before them learns."><span class="key">A</span><span>PyTorch needs every layer to have inputs</span></button><button type="button" class="opt" data-i="1" data-why="Without them, the encoder would never learn."><span class="key">B</span><span>So the gradient can flow on into the classical encoder in front of it</span></button><button type="button" class="opt" data-i="2" data-why="They cost extra runs."><span class="key">C</span><span>To make the circuits run faster</span></button><button type="button" class="opt" data-i="3" data-why="The loss only needs the forward pass."><span class="key">D</span><span>They're needed to compute the loss</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="2" data-lesson="qml-w3d3" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">A quantum layer has 6 weights and 3 input angles. How many circuit runs per data point does one training step cost?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's &lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;6&lt;/mn&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;1 + 6&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7278em;vertical-align:-0.0833em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.6444em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;6&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;: the shift rule needs two runs per parameter."><span class="key">A</span><span>7</span></button><button type="button" class="opt" data-i="1" data-why="That's &lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mo&gt;×&lt;/mo&gt;&lt;mn&gt;6&lt;/mn&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;1 + 2 \times 6&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7278em;vertical-align:-0.0833em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7278em;vertical-align:-0.0833em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;×&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.6444em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;6&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;: you forgot the input angles."><span class="key">B</span><span>13</span></button><button type="button" class="opt" data-i="2" data-why="&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;mo&gt;×&lt;/mo&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mn&gt;6&lt;/mn&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;3&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;19&lt;/mn&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;1 + 2 \times (6 + 3) = 19&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7278em;vertical-align:-0.0833em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.7278em;vertical-align:-0.0833em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;×&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mopen&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:1em;vertical-align:-0.25em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;mclose&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.6444em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;19&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;: one forward run, two shifted runs for each of 9 angles."><span class="key">C</span><span>19</span></button><button type="button" class="opt" data-i="3" data-why="That counts each parameter once, with no forward run."><span class="key">D</span><span>9</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qml-w3d3" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">A hybrid model reaches 99%, and so does the same model with its circuit replaced by a small classical layer. What's the fair conclusion?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The twin did just as well without it."><span class="key">A</span><span>The circuit is essential</span></button><button type="button" class="opt" data-i="1" data-why="Equal results mean no measurable benefit here; other tasks may differ."><span class="key">B</span><span>On this task, the circuit adds nothing measurable</span></button><button type="button" class="opt" data-i="2" data-why="It had the same data, encoder and training."><span class="key">C</span><span>The classical twin cheated</span></button><button type="button" class="opt" data-i="3" data-why="One task can't tell you that."><span class="key">D</span><span>Circuits always hurt</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Give a circuit a backward pass made of parameter-shift runs, for its weights and its input angles, and PyTorch trains it inside any hybrid model; then use a classical twin and a frozen encoder to check whether the circuit is doing the work.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Research link</span>
+<p class="mb0">Hybrid models are common in QML papers, sometimes with large classical networks around a few qubits. When you read one, look for today's two experiments. Without them, you can't tell whether the circuit matters or the classical layers did the job.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Mari, Bromley, Izaac, Schuld and Killoran, "Transfer learning in hybrid classical-quantum neural networks" (Quantum, 2020), which introduced the "dressed quantum circuit": classical layers on both sides of a circuit, like today's model. The PyTorch documentation's note "Extending PyTorch" explains custom autograd functions in full.</p>
+</div></div>
+<p class="muted mb0">Tomorrow: data re-uploading, and why Monday's moons got stuck.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qml-w3d3">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qml/w3d4.html"><img src="../assets/icons/reupload.svg" alt=""><span><small>Next in Quantum Machine Learning</small><span class="t">Data re-uploading</span></span></a><div class="also-today" data-date="2027-01-20" data-track="qml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qml/w3d2.html">← Readout &amp; loss</a><a href="../qml/w3d4.html">Re-uploading →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

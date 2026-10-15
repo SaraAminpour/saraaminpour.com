@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autoencoders · Machine Learning · Quantum Path</title>
+<meta name="description" content="A neural network that learns to copy its input through a narrow bottleneck, and so learns its own compression, its own map of the data, and an alarm for the unusual.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w6d4.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-6">Week 6 · Learning without labels</a><span class="muted">›</span><span class="chip plain">Day 4</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/autoenc.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Autoencoders</h1>
+      <p class="subtitle">A neural network that learns to copy its input through a narrow bottleneck, and so learns its own compression, its own map of the data, and an alarm for the unusual.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 12 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w6d4.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Build an autoencoder in PyTorch: encoder, bottleneck code, decoder</span></li><li><span>Compare it with PCA, and explore the map its code draws</span></li><li><span>Use reconstruction error to flag unusual data, and train a denoising autoencoder</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 12 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Explain it in two numbers</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-idea.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">Imagine describing any handwritten digit to a friend using only two numbers, so that they can redraw it. You'd have to invent a clever code. An autoencoder invents one by itself, with no labels at all, and yesterday's PCA gives us something to beat.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>An hourglass network</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>An <b>autoencoder</b> is a neural network shaped like an hourglass:</p>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>x</mi><mo>∈</mo><msup><mi mathvariant="double-struck">R</mi><mn>64</mn></msup><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext>encoder</mtext></mpadded></mover><mi>z</mi><mo>∈</mo><msup><mi mathvariant="double-struck">R</mi><mn>2</mn></msup><mover><mo stretchy="true" minsize="3.0em">→</mo><mpadded width="+0.6em" lspace="0.3em"><mtext>decoder</mtext></mpadded></mover><mover accent="true"><mi>x</mi><mo>^</mo></mover><mo>∈</mo><msup><mi mathvariant="double-struck">R</mi><mn>64</mn></msup><mo separator="true">,</mo><mspace width="2em"/><mtext>loss</mtext><mo>=</mo><mi mathvariant="normal">∥</mi><mi>x</mi><mo>−</mo><mover accent="true"><mi>x</mi><mo>^</mo></mover><msup><mi mathvariant="normal">∥</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">x \in \mathbb{R}^{64} \xrightarrow{\text{encoder}} z \in \mathbb{R}^{2} \xrightarrow{\text{decoder}} \hat x \in \mathbb{R}^{64}, \qquad \text{loss} = \|x - \hat x\|^2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1191em;vertical-align:-0.011em;"></span><span class="mord"><span class="mord mathbb">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">64</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1081em;"><span style="top:-3.322em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">encoder</span></span></span></span></span><span class="svg-align" style="top:-2.689em;"><span class="pstrut" style="height:2.7em;"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1191em;vertical-align:-0.011em;"></span><span class="mord"><span class="mord mathbb">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel x-arrow"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.1081em;"><span style="top:-3.322em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight x-arrow-pad"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">decoder</span></span></span></span></span><span class="svg-align" style="top:-2.689em;"><span class="pstrut" style="height:2.7em;"></span><span class="hide-tail" style="height:0.522em;min-width:1.469em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="0.522em" viewBox="0 0 400000 522" preserveAspectRatio="xMaxYMin slice"><path d="M0 241v40h399891c-47.3 35.3-84 78-110 128
+-16.7 32-27.7 63.7-33 95 0 1.3-.2 2.7-.5 4-.3 1.3-.5 2.3-.5 3 0 7.3 6.7 11 20
+ 11 8 0 13.2-.8 15.5-2.5 2.3-1.7 4.2-5.5 5.5-11.5 2-13.3 5.7-27 11-41 14.7-44.7
+ 39-84.5 73-119.5s73.7-60.2 119-75.5c6-2 9-5.7 9-11s-3-9-9-11c-45.3-15.3-85
+-40.5-119-75.5s-58.3-74.8-73-119.5c-4.7-14-8.3-27.3-11-40-1.3-6.7-3.2-10.8-5.5
+-12.5-2.3-1.7-7.5-2.5-15.5-2.5-14 0-21 3.7-21 11 0 2 2 10.3 6 25 20.7 83.3 67
+ 151.7 139 205zm0 0v40h399900v-40z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.011em;"><span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7335em;vertical-align:-0.0391em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2222em;"><span class="mord">^</span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0585em;vertical-align:-0.1944em;"></span><span class="mord"><span class="mord mathbb">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">64</span></span></span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">loss</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∥</span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.1141em;vertical-align:-0.25em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mathnormal">x</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.2222em;"><span class="mord">^</span></span></span></span></span></span></span><span class="mord"><span class="mord">∥</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8641em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span></span></span></span></span></span></span></span></span></div>
+<p>The target is the input itself, so no labels are needed: it's <b>unsupervised</b> (or "self-supervised"). Because the middle is narrow, the <b>code</b> <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi></mrow><annotation encoding="application/x-tex">z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span></span></span></span> must keep what matters most about <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>. The training is everything from week 5: backpropagation, Adam, the usual loop.</p>
+<p><b>Against PCA.</b> With only linear layers, an autoencoder finds the same subspace as PCA. Nonlinear layers let it bend: with the same 2 numbers per digit, it rebuilds new digits clearly better than PCA (the notebook measures it).</p>
+<p><b>A map of the data.</b> The code space is continuous. Every point of it, even where no training digit landed, decodes into some image: the decoder can "imagine" digits.</p>
+<p><b>An alarm for the unusual.</b> Trained on normal data, the autoencoder rebuilds normal data well and strange data badly. A large <b>reconstruction error</b> flags a possible <b>anomaly</b>: a faulty sensor, an odd transaction, a corrupted image. Where to put the threshold is a trade-off between false alarms and missed anomalies, just like the threshold in week 3.</p>
+<p><b>Denoising.</b> Feed it noisy inputs but ask for the clean originals, and it learns to remove the noise.</p>
+<p class="big-idea">Squeeze through a bottleneck and rebuild: the code is a compression, the decoder is a generator, and the rebuild error is an anomaly score.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Inside the bottleneck</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>The code map.</b> Each dot is a training digit, placed by its two-number code (colors show the true digit, which the network never saw). Hover a dot to compare the digit with its rebuild; hover <em>empty</em> space and the decoder imagines a digit for that spot.</p>
+<div data-widget="ae"></div>
+<p><b>The alarm.</b> The same network scores new test digits, the same digits mirrored left to right, and random noise. Slide the threshold.</p>
+<div data-widget="anomaly"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">In the map, slide slowly from the 0s to the 6s: the imagined digit morphs smoothly between them. In the alarm, find a threshold with about 5% false alarms. How many mirrored digits does it catch? Look at the thumbnails: why do the mirrored 0 and 8 sail through?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Autoencoders in PyTorch</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w6d4.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w6d4.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w6d4.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · build and train</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_digits
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+digits = load_digits()
+X = digits.data / <span class="hljs-number">16.0</span>                                <span class="hljs-comment"># 1797 images, 64 pixel values in [0, 1]</span>
+X_train, X_test, y_train, y_test = train_test_split(X, digits.target, test_size=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>, stratify=digits.target)
+T = <span class="hljs-keyword">lambda</span> a: torch.tensor(a, dtype=torch.float32)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">train_autoencoder</span>(<span class="hljs-params">inputs, targets, code_size=<span class="hljs-number">2</span>, epochs=<span class="hljs-number">1500</span>, seed=<span class="hljs-number">1</span></span>):
+    <span class="hljs-string">&quot;&quot;&quot;Encoder 64 -&gt; 32 -&gt; code_size, decoder code_size -&gt; 32 -&gt; 64. Learns to turn inputs into targets.&quot;&quot;&quot;</span>
+    torch.manual_seed(seed)
+    encoder = torch.nn.Sequential(torch.nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">32</span>), torch.nn.Tanh(), torch.nn.Linear(<span class="hljs-number">32</span>, code_size))
+    decoder = torch.nn.Sequential(torch.nn.Linear(code_size, <span class="hljs-number">32</span>), torch.nn.Tanh(), torch.nn.Linear(<span class="hljs-number">32</span>, <span class="hljs-number">64</span>), torch.nn.Sigmoid())
+    optimizer = torch.optim.Adam(<span class="hljs-built_in">list</span>(encoder.parameters()) + <span class="hljs-built_in">list</span>(decoder.parameters()), lr=<span class="hljs-number">3e-3</span>)
+    a, b = T(inputs), T(targets)
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(epochs):
+        optimizer.zero_grad()
+        loss = torch.nn.functional.mse_loss(decoder(encoder(a)), b)   <span class="hljs-comment"># how well does it copy?</span>
+        loss.backward()
+        optimizer.step()
+    <span class="hljs-keyword">return</span> encoder, decoder
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">errors</span>(<span class="hljs-params">encoder, decoder, A</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Reconstruction error of every image: the mean squared difference over its 64 pixels.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        <span class="hljs-keyword">return</span> ((decoder(encoder(T(A))).numpy() - A) ** <span class="hljs-number">2</span>).mean(axis=<span class="hljs-number">1</span>)
+
+encoder, decoder = train_autoencoder(X_train, X_train)          <span class="hljs-comment"># input = target: no labels anywhere</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;reconstruction error: training digits <span class="hljs-subst">{errors(encoder, decoder, X_train).mean():<span class="hljs-number">.4</span>f}</span>, &quot;</span>
+      <span class="hljs-string">f&quot;new test digits <span class="hljs-subst">{errors(encoder, decoder, X_test).mean():<span class="hljs-number">.4</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">reconstruction error: training digits 0.0293, new test digits 0.0377</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the learned code</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">with</span> torch.no_grad():
+    codes = encoder(T(X_train)).numpy()
+fig, ax = plt.subplots(figsize=(<span class="hljs-number">5.4</span>, <span class="hljs-number">4.2</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+points = ax.scatter(codes[:, <span class="hljs-number">0</span>], codes[:, <span class="hljs-number">1</span>], c=y_train, cmap=<span class="hljs-string">&quot;tab10&quot;</span>, s=<span class="hljs-number">7</span>)
+fig.colorbar(points, ax=ax, label=<span class="hljs-string">&quot;digit&quot;</span>, ticks=<span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>))
+ax.set_title(<span class="hljs-string">&quot;Digits in the autoencoder&#x27;s 2D code&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w6d4-latent-e1f65db2.png" width="605" height="474" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · against PCA</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.decomposition <span class="hljs-keyword">import</span> PCA
+
+<span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> [<span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">8</span>]:
+    enc_k, dec_k = (encoder, decoder) <span class="hljs-keyword">if</span> k == <span class="hljs-number">2</span> <span class="hljs-keyword">else</span> train_autoencoder(X_train, X_train, code_size=k)
+    pca = PCA(n_components=k).fit(X_train)
+    pca_error = ((pca.inverse_transform(pca.transform(X_test)) - X_test) ** <span class="hljs-number">2</span>).mean()
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{k}</span> numbers per digit: PCA test error <span class="hljs-subst">{pca_error:<span class="hljs-number">.4</span>f}</span>, autoencoder test error <span class="hljs-subst">{errors(enc_k, dec_k, X_test).mean():<span class="hljs-number">.4</span>f}</span>&quot;</span>)
+
+pca2 = PCA(n_components=<span class="hljs-number">2</span>).fit(X_train)
+<span class="hljs-keyword">with</span> torch.no_grad():
+    ae_back = decoder(encoder(T(X_test[:<span class="hljs-number">8</span>]))).numpy()
+pca_back = pca2.inverse_transform(pca2.transform(X_test[:<span class="hljs-number">8</span>]))
+fig, axes = plt.subplots(<span class="hljs-number">3</span>, <span class="hljs-number">8</span>, figsize=(<span class="hljs-number">7.5</span>, <span class="hljs-number">3</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> col <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">8</span>):
+    <span class="hljs-keyword">for</span> row, image <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>([X_test[col], pca_back[col], ae_back[col]]):
+        axes[row, col].imshow(image.reshape(<span class="hljs-number">8</span>, <span class="hljs-number">8</span>), cmap=<span class="hljs-string">&quot;Purples&quot;</span>, vmin=<span class="hljs-number">0</span>, vmax=<span class="hljs-number">1</span>)
+        axes[row, col].axis(<span class="hljs-string">&quot;off&quot;</span>)
+axes[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;original&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">1</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;PCA, 2 numbers&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">2</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;autoencoder, 2 numbers&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">2 numbers per digit: PCA test error 0.0530, autoencoder test error 0.0377
+4 numbers per digit: PCA test error 0.0382, autoencoder test error 0.0257
+8 numbers per digit: PCA test error 0.0246, autoencoder test error 0.0157</pre><img src="../assets/out/ml-w6d4-vs_pca-6cf09158.png" width="818" height="342" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · spotting the unusual</span><button type="button" class="btn-copy">Copy</button></div><pre><code>mirrored = X_test.reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">8</span>, <span class="hljs-number">8</span>)[:, :, ::-<span class="hljs-number">1</span>].reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">64</span>)
+rng = np.random.default_rng(<span class="hljs-number">0</span>)
+noise = rng.random((<span class="hljs-number">200</span>, <span class="hljs-number">64</span>)) * (rng.random((<span class="hljs-number">200</span>, <span class="hljs-number">64</span>)) &lt; <span class="hljs-number">0.45</span>)
+e_test, e_mirror, e_noise = errors(encoder, decoder, X_test), errors(encoder, decoder, mirrored), errors(encoder, decoder, noise)
+
+threshold = np.quantile(e_test, <span class="hljs-number">0.95</span>)
+bins = np.linspace(<span class="hljs-number">0</span>, <span class="hljs-number">0.25</span>, <span class="hljs-number">50</span>)
+plt.hist(e_test, bins=bins, alpha=<span class="hljs-number">0.7</span>, color=<span class="hljs-string">&quot;#b9a7ff&quot;</span>, label=<span class="hljs-string">&quot;normal test digits&quot;</span>)
+plt.hist(e_mirror, bins=bins, alpha=<span class="hljs-number">0.7</span>, color=<span class="hljs-string">&quot;#ff8a50&quot;</span>, label=<span class="hljs-string">&quot;mirrored digits&quot;</span>)
+plt.hist(e_noise, bins=bins, alpha=<span class="hljs-number">0.7</span>, color=<span class="hljs-string">&quot;#8a85a3&quot;</span>, label=<span class="hljs-string">&quot;noise&quot;</span>)
+plt.axvline(threshold, color=<span class="hljs-string">&quot;#e5566b&quot;</span>, lw=<span class="hljs-number">2</span>, label=<span class="hljs-string">&quot;alarm threshold&quot;</span>)
+plt.xlabel(<span class="hljs-string">&quot;reconstruction error&quot;</span>)
+plt.ylabel(<span class="hljs-string">&quot;number of images&quot;</span>)
+plt.legend()
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;caught: <span class="hljs-subst">{np.mean(e_mirror &gt; threshold):<span class="hljs-number">.0</span>%}</span> of mirrored digits, <span class="hljs-subst">{np.mean(e_noise &gt; threshold):<span class="hljs-number">.0</span>%}</span> of noise images &quot;</span>
+      <span class="hljs-string">f&quot;(with 5% false alarms)&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;mirrored digits caught, by digit:&quot;</span>, <span class="hljs-string">&quot;  &quot;</span>.join(<span class="hljs-string">f&quot;<span class="hljs-subst">{d}</span>: <span class="hljs-subst">{np.mean(e_mirror[y_test == d] &gt; threshold):<span class="hljs-number">.0</span>%}</span>&quot;</span> <span class="hljs-keyword">for</span> d <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>)))</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w6d4-anomaly-9e57e004.png" width="600" height="409" alt="Figure produced by this code" loading="lazy"><pre class="text">caught: 40% of mirrored digits, 100% of noise images (with 5% false alarms)
+mirrored digits caught, by digit: 0: 9%  1: 33%  2: 50%  3: 30%  4: 53%  5: 65%  6: 82%  7: 20%  8: 5%  9: 47%</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: a denoising autoencoder</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Add noise to the training digits, and train the network to output the <em>clean</em> versions. Then clean up noisy test digits it has never seen.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>rng = np.random.default_rng(<span class="hljs-number">1</span>)
+noisy_train = X_train          <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> X_train + 0.25 * rng.standard_normal(X_train.shape), clipped to [0, 1]</span>
+noisy_test = X_test            <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> the same for X_test</span>
+enc_d, dec_d = <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>      <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> train_autoencoder(noisy_train, X_train, code_size=8)</span>
+
+<span class="hljs-keyword">if</span> dec_d <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        cleaned = dec_d(enc_d(T(noisy_test[:<span class="hljs-number">8</span>]))).numpy()
+    fig, axes = plt.subplots(<span class="hljs-number">3</span>, <span class="hljs-number">8</span>, figsize=(<span class="hljs-number">7.5</span>, <span class="hljs-number">3</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+    <span class="hljs-keyword">for</span> col <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">8</span>):
+        <span class="hljs-keyword">for</span> row, image <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>([X_test[col], noisy_test[col], cleaned[col]]):
+            axes[row, col].imshow(image.reshape(<span class="hljs-number">8</span>, <span class="hljs-number">8</span>), cmap=<span class="hljs-string">&quot;Purples&quot;</span>, vmin=<span class="hljs-number">0</span>, vmax=<span class="hljs-number">1</span>)
+            axes[row, col].axis(<span class="hljs-string">&quot;off&quot;</span>)
+    plt.show()</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>np.clip(X_train + 0.25 * rng.standard_normal(X_train.shape), 0, 1)</code> makes the noisy copies. Then <code>train_autoencoder(noisy_train, X_train, code_size=8)</code>: noisy in, clean out.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>rng = np.random.default_rng(<span class="hljs-number">1</span>)
+noisy_train = np.clip(X_train + <span class="hljs-number">0.25</span> * rng.standard_normal(X_train.shape), <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+noisy_test = np.clip(X_test + <span class="hljs-number">0.25</span> * rng.standard_normal(X_test.shape), <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+enc_d, dec_d = train_autoencoder(noisy_train, X_train, code_size=<span class="hljs-number">8</span>)     <span class="hljs-comment"># noisy in, clean out</span>
+
+<span class="hljs-keyword">with</span> torch.no_grad():
+    cleaned = dec_d(enc_d(T(noisy_test[:<span class="hljs-number">8</span>]))).numpy()
+fig, axes = plt.subplots(<span class="hljs-number">3</span>, <span class="hljs-number">8</span>, figsize=(<span class="hljs-number">7.5</span>, <span class="hljs-number">3</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> col <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">8</span>):
+    <span class="hljs-keyword">for</span> row, image <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>([X_test[col], noisy_test[col], cleaned[col]]):
+        axes[row, col].imshow(image.reshape(<span class="hljs-number">8</span>, <span class="hljs-number">8</span>), cmap=<span class="hljs-string">&quot;Purples&quot;</span>, vmin=<span class="hljs-number">0</span>, vmax=<span class="hljs-number">1</span>)
+        axes[row, col].axis(<span class="hljs-string">&quot;off&quot;</span>)
+axes[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;clean&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">1</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;noisy input&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">2</span>, <span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;denoised&quot;</span>, loc=<span class="hljs-string">&quot;left&quot;</span>, fontsize=<span class="hljs-number">10</span>)
+plt.show()
+<span class="hljs-keyword">with</span> torch.no_grad():
+    after = ((dec_d(enc_d(T(noisy_test))).numpy() - X_test) ** <span class="hljs-number">2</span>).mean()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;error against the clean digits: noisy input <span class="hljs-subst">{((noisy_test - X_test) ** <span class="hljs-number">2</span>).mean():<span class="hljs-number">.4</span>f}</span>, denoised <span class="hljs-subst">{after:<span class="hljs-number">.4</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w6d4-sol-053bcc50.png" width="818" height="342" alt="Figure produced by this code" loading="lazy"><pre class="text">error against the clean digits: noisy input 0.0379, denoised 0.0262</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w6d4" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">An autoencoder is trained to…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="It needs no labels at all."><span class="key">A</span><span>Predict labels</span></button><button type="button" class="opt" data-i="1" data-why="Input in, the same input out, squeezed through a small code in the middle."><span class="key">B</span><span>Reproduce its own input through a narrow bottleneck</span></button><button type="button" class="opt" data-i="2" data-why="That's reinforcement learning, next week."><span class="key">C</span><span>Maximize rewards</span></button><button type="button" class="opt" data-i="3" data-why="That's an SVM."><span class="key">D</span><span>Separate classes with a margin</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w6d4" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">With purely linear layers, what would an autoencoder learn?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="It still learns the best linear squeeze."><span class="key">A</span><span>Nothing</span></button><button type="button" class="opt" data-i="1" data-why="The best linear compression is PCA's; the nonlinear bends are what let autoencoders do better."><span class="key">B</span><span>The same subspace as PCA</span></button><button type="button" class="opt" data-i="2" data-why="Only nonlinear layers can beat PCA."><span class="key">C</span><span>Something better than PCA</span></button><button type="button" class="opt" data-i="3" data-why="Training makes the code far from random."><span class="key">D</span><span>A random code</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w6d4" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">An autoencoder trained on normal heartbeats rebuilds a new heartbeat badly. What might that mean?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="It rebuilds normal heartbeats well, so it works."><span class="key">A</span><span>The autoencoder is broken</span></button><button type="button" class="opt" data-i="1" data-why="High reconstruction error means &quot;this doesn't look like what I learned&quot;."><span class="key">B</span><span>The heartbeat is unusual: a possible anomaly</span></button><button type="button" class="opt" data-i="2" data-why="Normal ones are rebuilt well."><span class="key">C</span><span>The heartbeat is perfectly normal</span></button><button type="button" class="opt" data-i="3" data-why="Autoencoders don't use labels."><span class="key">D</span><span>It needs more labels</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">An autoencoder learns to copy its input through a narrow code: nonlinear layers let it compress better than PCA, its code space can be explored and decoded, its reconstruction error flags the unusual, and training noisy-in, clean-out makes it a denoiser.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">There is a <b>quantum autoencoder</b>: a trained circuit that squeezes an <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>-qubit state into fewer qubits and discards the rest, judged by the fidelity of the rebuilt state (fidelity is in the Quantum Computing tutorial this week). It's a tool for compressing quantum data, and a nice example of a variational circuit, the topic of both tutorials' final week of the term.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Goodfellow, Bengio and Courville's free book <em>Deep Learning</em>, chapter 14 (autoencoders, including denoising autoencoders). The quantum version: Romero, Olson and Aspuru-Guzik, "Quantum autoencoders for efficient compression of quantum data" (Quantum Science and Technology, 2017).</p>
+</div></div>
+<p class="muted mb0">Next in Machine Learning: semi-supervised learning, where a handful of labels go a long way.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w6d4">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w6d5.html"><img src="../assets/icons/semi.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Semi-supervised learning</span></span></a><div class="also-today" data-date="2026-12-03" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w6d3.html">← PCA</a><a href="../ml/w6d5.html">Semi-supervised →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: state tomography · Quantum Computing · Quantum Path</title>
+<meta name="description" content="A mystery qubit, three meters and a few thousand shots: rebuild its full state, phase included.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qc-w3d5.js?v=mva52clc"></script>
+</head>
+<body class="track-qc">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html" aria-current="page"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qc/index.html">Quantum Computing</a><span class="muted">›</span><a href="../qc/index.html#week-3">Week 3 · The maths of qubits, and interference</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qc"><img src="../assets/icons/tomo.svg" alt=""></div>
+    <div>
+      <span class="chip qc"><span class="dot"></span>Quantum Computing</span>
+      <h1>Project: state tomography</h1>
+      <p class="subtitle">A mystery qubit, three meters and a few thousand shots: rebuild its full state, phase included.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 8 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qc-w3d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Estimate a state's Bloch vector from counts in the X, Y and Z bases</span></li><li><span>Turn the estimated arrow back into a state</span></li><li><span>Judge the reconstruction with the fidelity, and see how it improves with shots</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#project"><span class="num">5</span>Project</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 8 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>A detective story, part two</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-cheer.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">This project is a short one. In week 1 you recovered one hidden angle from 0/1 counts. A single meter can't see the phase, though. Now you have three meters, and three coordinates fix an arrow completely. Let's rebuild a whole mystery state.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Three shadows make an arrow</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>From yesterday: measuring in a basis gives the probability of its first outcome, and the matching coordinate of the Bloch arrow is</p>
+<div class="math-card"><div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>x</mi><mo>=</mo><mn>2</mn><mi>P</mi><mo stretchy="false">(</mo><mo>+</mo><mo stretchy="false">)</mo><mo>−</mo><mn>1</mn><mo separator="true">,</mo><mspace width="2em"/><mi>y</mi><mo>=</mo><mn>2</mn><mi>P</mi><mo stretchy="false">(</mo><mo>+</mo><mi>i</mi><mo stretchy="false">)</mo><mo>−</mo><mn>1</mn><mo separator="true">,</mo><mspace width="2em"/><mi>z</mi><mo>=</mo><mn>2</mn><mi>P</mi><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">x = 2P(+) - 1, \qquad y = 2P(+i) - 1, \qquad z = 2P(0) - 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord">+</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord">+</span><span class="mord mathnormal">i</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord">0</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></div>
+<p>So: prepare many copies of the state, measure some in X, some in Y and some in Z, and compute the three coordinates. Shot noise can make the estimated arrow a little longer than 1, which no real state can be, so we shrink it back to length 1. Finally the angles <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mi>arccos</mi><mo>⁡</mo><mi>z</mi></mrow><annotation encoding="application/x-tex">\theta = \arccos z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">θ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mop">arccos</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>φ</mi><mo>=</mo><mi mathvariant="normal">atan2</mi><mo>⁡</mo><mo stretchy="false">(</mo><mi>y</mi><mo separator="true">,</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\varphi = \operatorname{atan2}(y, x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">φ</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop"><span class="mord mathrm">atan2</span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.03588em;">y</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> give the state.</p>
+<p class="big-idea">Reconstructing a state from measurements in several bases is called <b>quantum state tomography</b>, like a CT scan built from shadows taken at different angles.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Rebuild the mystery qubit</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>The purple arrow is your estimate. When you're happy with it, reveal the true state (pink) and read the fidelity.</p>
+<div data-widget="tomo"></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The mystery state in Qiskit</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qc-w3d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qc/qc-w3d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qc/qc-w3d5.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · a hidden state and its three meters</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit
+<span class="hljs-keyword">from</span> qiskit.primitives <span class="hljs-keyword">import</span> StatevectorSampler
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> Statevector, state_fidelity
+
+sampler = StatevectorSampler(seed=<span class="hljs-number">12</span>)
+_rng = np.random.default_rng(<span class="hljs-number">31</span>)
+_t, _p = np.arccos(<span class="hljs-number">1</span> - <span class="hljs-number">2</span> * _rng.random()), <span class="hljs-number">2</span> * np.pi * _rng.random()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">mystery</span>():
+    <span class="hljs-string">&quot;&quot;&quot;A circuit that prepares a hidden one-qubit state (don&#x27;t peek!).&quot;&quot;&quot;</span>
+    qc = QuantumCircuit(<span class="hljs-number">1</span>)
+    qc.ry(_t, <span class="hljs-number">0</span>)
+    qc.rz(_p, <span class="hljs-number">0</span>)
+    <span class="hljs-keyword">return</span> qc
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">p_first</span>(<span class="hljs-params">basis, shots</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Probability of the first outcome (0, + or +i) when measuring the mystery state in a basis.&quot;&quot;&quot;</span>
+    qc = mystery()
+    <span class="hljs-keyword">if</span> basis == <span class="hljs-string">&quot;X&quot;</span>:
+        qc.h(<span class="hljs-number">0</span>)
+    <span class="hljs-keyword">elif</span> basis == <span class="hljs-string">&quot;Y&quot;</span>:
+        qc.sdg(<span class="hljs-number">0</span>)
+        qc.h(<span class="hljs-number">0</span>)
+    qc.measure_all()
+    counts = sampler.run([qc], shots=shots).result()[<span class="hljs-number">0</span>].data.meas.get_counts()
+    <span class="hljs-keyword">return</span> counts.get(<span class="hljs-string">&quot;0&quot;</span>, <span class="hljs-number">0</span>) / shots
+
+<span class="hljs-built_in">print</span>({b: p_first(b, <span class="hljs-number">100</span>) <span class="hljs-keyword">for</span> b <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;XYZ&quot;</span>})</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">{'X': 0.7, 'Y': 0.55, 'Z': 0.07}</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="project"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-star.svg" alt=""></span><div><span class="label">Project</span><h2>Project: rebuild the state</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Write <code>tomography(shots)</code>: estimate the three coordinates, shrink the arrow if needed, turn it into angles and a state. Then check the fidelity with the truth for 100, 1000 and 10000 shots per basis.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">project · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">tomography</span>(<span class="hljs-params">shots</span>):
+    v = np.zeros(<span class="hljs-number">3</span>)          <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> [2 * p_first(b, shots) - 1 for b in &quot;XYZ&quot;], shrunk to length 1 if needed</span>
+    theta = <span class="hljs-number">0.0</span>              <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> from v</span>
+    phi = <span class="hljs-number">0.0</span>                <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> from v</span>
+    <span class="hljs-keyword">return</span> Statevector([np.cos(theta / <span class="hljs-number">2</span>), np.exp(<span class="hljs-number">1j</span> * phi) * np.sin(theta / <span class="hljs-number">2</span>)])
+
+truth = Statevector(mystery())
+<span class="hljs-keyword">for</span> shots <span class="hljs-keyword">in</span> [<span class="hljs-number">100</span>, <span class="hljs-number">1000</span>, <span class="hljs-number">10000</span>]:
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{shots:6d}</span> shots per basis: fidelity <span class="hljs-subst">{state_fidelity(tomography(shots), truth):<span class="hljs-number">.4</span>f}</span>&quot;</span>)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>np.arccos</code> and <code>np.arctan2(y, x)</code> give the angles. <code>np.linalg.norm(v)</code> is the arrow's length.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">tomography</span>(<span class="hljs-params">shots</span>):
+    v = np.array([<span class="hljs-number">2</span> * p_first(b, shots) - <span class="hljs-number">1</span> <span class="hljs-keyword">for</span> b <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;XYZ&quot;</span>])
+    length = np.linalg.norm(v)
+    <span class="hljs-keyword">if</span> length &gt; <span class="hljs-number">1</span>:
+        v = v / length
+    theta = np.arccos(np.clip(v[<span class="hljs-number">2</span>] / <span class="hljs-built_in">max</span>(np.linalg.norm(v), <span class="hljs-number">1e-12</span>), -<span class="hljs-number">1</span>, <span class="hljs-number">1</span>))
+    phi = np.arctan2(v[<span class="hljs-number">1</span>], v[<span class="hljs-number">0</span>])
+    <span class="hljs-keyword">return</span> Statevector([np.cos(theta / <span class="hljs-number">2</span>), np.exp(<span class="hljs-number">1j</span> * phi) * np.sin(theta / <span class="hljs-number">2</span>)])
+
+<span class="hljs-keyword">for</span> shots <span class="hljs-keyword">in</span> [<span class="hljs-number">100</span>, <span class="hljs-number">1000</span>, <span class="hljs-number">10000</span>]:
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{shots:6d}</span> shots per basis: fidelity <span class="hljs-subst">{state_fidelity(tomography(shots), truth):<span class="hljs-number">.4</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nThe hidden angles were theta = <span class="hljs-subst">{np.degrees(_t):<span class="hljs-number">.1</span>f}</span> and phi = <span class="hljs-subst">{np.degrees(_p):<span class="hljs-number">.1</span>f}</span> degrees.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">   100 shots per basis: fidelity 0.9893
+  1000 shots per basis: fidelity 0.9995
+ 10000 shots per basis: fidelity 0.9999
+
+The hidden angles were theta = 143.7 and phi = 24.4 degrees.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qc-w3d5" data-qid="q1"><div class="qn">Question 1 of 2</div><div class="prompt">Why can't the Z meter alone reveal a qubit's state?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Noise shrinks with shots; the missing information doesn't."><span class="key">A</span><span>It's too noisy</span></button><button type="button" class="opt" data-i="1" data-why="States with the same height but different longitude give identical Z counts."><span class="key">B</span><span>It only reads the height <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi></mrow><annotation encoding="application/x-tex">z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.04398em;">z</span></span></span></span>, and says nothing about the phase</span></button><button type="button" class="opt" data-i="2" data-why="Each copy is measured once anyway."><span class="key">C</span><span>It changes the state</span></button><button type="button" class="opt" data-i="3" data-why="No number of Z shots can see the longitude."><span class="key">D</span><span>It can, with enough shots</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qc-w3d5" data-qid="q2"><div class="qn">Question 2 of 2</div><div class="prompt">With 100 shots per basis, your estimated arrow has length 1.03. What do you do?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="No pure state has an arrow longer than 1."><span class="key">A</span><span>Report it as is</span></button><button type="button" class="opt" data-i="1" data-why="The direction is your best estimate; scaling it back onto the sphere gives a real state."><span class="key">B</span><span>Shrink it to length 1: shot noise made it too long</span></button><button type="button" class="opt" data-i="2" data-why="The data is fine, just noisy."><span class="key">C</span><span>Throw the data away</span></button><button type="button" class="opt" data-i="3" data-why="That loses the phase."><span class="key">D</span><span>Measure only in Z</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>This week in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">States are vectors and gates unitary matrices, so every gate can be undone; amplitudes add and cancel (interference); a basis change before the meter reads the arrow along any axis, and three bases reveal the whole state.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Machine-learning link</span>
+<p class="mb0">Tomography is a tiny learning problem: estimate parameters (the arrow) from noisy samples (the shots). For many qubits it gets exponentially expensive, and researchers now use machine learning, even neural networks, to do it with far fewer measurements.</p>
+</div></div>
+<p class="muted mb0">That's week 3 of Quantum Computing! Rest after the midterm. Next week: two qubits, and entanglement.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qc-w3d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qc btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qc/w4d1.html"><img src="../assets/icons/twoq.svg" alt=""><span><small>Next in Quantum Computing</small><span class="t">Two qubits</span></span></a><div class="also-today" data-date="2026-11-06" data-track="qc"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qc/w3d4.html">← Other bases</a><a href="../qc/w4d1.html">Two qubits →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

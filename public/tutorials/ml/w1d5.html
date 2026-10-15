@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is my model any good? · Machine Learning · Quantum Path</title>
+<meta name="description" content="Accuracy is only one number, and when one class is rare it can be a very misleading one. Meet the confusion matrix and the scores built from it.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w1d5.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-1">Week 1 · Learning from examples</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/target.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Is my model any good?</h1>
+      <p class="subtitle">Accuracy is only one number, and when one class is rare it can be a very misleading one. Meet the confusion matrix and the scores built from it.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 11 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w1d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Read a confusion matrix: true and false positives and negatives</span></li><li><span>Compute precision, recall, F1 and balanced accuracy, and know when each one matters</span></li><li><span>Spot the accuracy trap on imbalanced data, and always compare with a lazy baseline</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 11 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>A test that is right 95% of the time</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">5 in every 100 patients have a disease. A "test" that simply says <em>healthy</em> to everyone is right 95% of the time. Would you trust it? Of course not: it never finds a single sick person. Yet its accuracy is 95%. Today you'll learn the scores that catch this trick.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Four kinds of right and wrong</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>For a yes/no question ("is this patient sick?"), call the class we're looking for <b>positive</b>. Every prediction lands in one of four boxes, the <b>confusion matrix</b>:</p>
+<table class="tablelike cm-table" style="max-width:560px">
+<tr><th></th><th>predicted positive</th><th>predicted negative</th></tr>
+<tr><td><b>really positive</b></td><td class="ok">true positive <b>TP</b><br><small>found it</small></td><td class="miss">false negative <b>FN</b><br><small>missed it</small></td></tr>
+<tr><td><b>really negative</b></td><td class="alarm">false positive <b>FP</b><br><small>false alarm</small></td><td class="ok">true negative <b>TN</b><br><small>correctly left alone</small></td></tr>
+</table>
+<p>Each score answers a different question:</p>
+<div class="math-card">
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>precision</mtext><mo>=</mo><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>P</mi></mrow></mfrac><mspace width="1em"/><mtext>(when it says positive, how often is it right?)</mtext></mrow><annotation encoding="application/x-tex">\text{precision} = \frac{TP}{TP + FP} \quad\text{(when it says positive, how often is it right?)}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8623em;vertical-align:-0.1944em;"></span><span class="mord text"><span class="mord">precision</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.1297em;vertical-align:-0.7693em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3603em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">TP</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">FP</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">TP</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7693em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord text"><span class="mord">(when it says positive, how often is it right?)</span></span></span></span></span></span></div>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>recall</mtext><mo>=</mo><mfrac><mrow><mi>T</mi><mi>P</mi></mrow><mrow><mi>T</mi><mi>P</mi><mo>+</mo><mi>F</mi><mi>N</mi></mrow></mfrac><mspace width="1em"/><mtext>(of the real positives, how many did it find?)</mtext></mrow><annotation encoding="application/x-tex">\text{recall} = \frac{TP}{TP + FN} \quad\text{(of the real positives, how many did it find?)}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord text"><span class="mord">recall</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.1297em;vertical-align:-0.7693em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3603em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">TP</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">FN</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">TP</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.7693em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:1em;"></span><span class="mord text"><span class="mord">(of the real positives, how many did it find?)</span></span></span></span></span></span></div>
+<div class="math-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>F</mi><mn>1</mn></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mo>⋅</mo><mtext>precision</mtext><mo>⋅</mo><mtext>recall</mtext></mrow><mrow><mtext>precision</mtext><mo>+</mo><mtext>recall</mtext></mrow></mfrac><mo separator="true">,</mo><mspace width="2em"/><mtext>balanced accuracy</mtext><mo>=</mo><mfrac><mrow><mtext>recall of positives</mtext><mo>+</mo><mtext>recall of negatives</mtext></mrow><mn>2</mn></mfrac></mrow><annotation encoding="application/x-tex">F_1 = \frac{2\cdot\text{precision}\cdot\text{recall}}{\text{precision} + \text{recall}}, \qquad \text{balanced accuracy} = \frac{\text{recall of positives} + \text{recall of negatives}}{2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.2519em;vertical-align:-0.8804em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord">precision</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord text"><span class="mord">recall</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord text"><span class="mord">precision</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord text"><span class="mord">recall</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.8804em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:2em;"></span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord text"><span class="mord">balanced accuracy</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.0574em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">2</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord">recall of positives</span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord text"><span class="mord">recall of negatives</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span></div>
+</div>
+<p>The lazy "everyone is healthy" test has recall 0, so its F1 is 0 and its balanced accuracy is 50%: no better than a coin. That's the trap exposed.</p>
+<p class="big-idea">Always compare a model with the lazy baseline that predicts the most common class. Beating 95% accuracy means nothing if the baseline already gets 95%.</p>
+<p>Many models give a <b>score</b> rather than a yes/no, and you choose the <b>threshold</b> above which you say "positive". Lowering it finds more positives (recall up) but raises more false alarms (precision down). Which balance is right depends on what each mistake costs: missing a disease is usually far worse than a false alarm.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>The accuracy trap</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>100 patients, 5 of them sick. First try the lazy model, then switch to a real test score and move its threshold.</p>
+<div data-widget="trap"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Find the sweet spot</span>
+<p class="mb0">Can you find all 5 sick patients? What does it cost in false alarms, and what happens to precision? Then find the threshold with the best F1. Notice that accuracy hardly moves while the other scores swing wildly.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The scores in scikit-learn</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w1d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w1d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w1d5.ipynb" download>Download notebook</a></div></div>
+<p>A dataset where only 5% of the examples are positive:</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · an imbalanced dataset</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_classification
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+X, y = make_classification(n_samples=<span class="hljs-number">2000</span>, n_features=<span class="hljs-number">2</span>, n_informative=<span class="hljs-number">2</span>, n_redundant=<span class="hljs-number">0</span>,
+                           weights=[<span class="hljs-number">0.95</span>, <span class="hljs-number">0.05</span>], class_sep=<span class="hljs-number">1.0</span>, flip_y=<span class="hljs-number">0</span>, random_state=<span class="hljs-number">4</span>)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="hljs-number">0.3</span>, stratify=y, random_state=<span class="hljs-number">0</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{<span class="hljs-built_in">len</span>(y)}</span> examples, <span class="hljs-subst">{y.<span class="hljs-built_in">sum</span>()}</span> positive (<span class="hljs-subst">{y.mean():<span class="hljs-number">.0</span>%}</span>)&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;test set: <span class="hljs-subst">{<span class="hljs-built_in">len</span>(y_test)}</span> examples, <span class="hljs-subst">{y_test.<span class="hljs-built_in">sum</span>()}</span> positive&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">2000 examples, 100 positive (5%)
+test set: 600 examples, 30 positive</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the lazy baseline</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.dummy <span class="hljs-keyword">import</span> DummyClassifier
+<span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> accuracy_score, balanced_accuracy_score, recall_score
+
+lazy = DummyClassifier(strategy=<span class="hljs-string">&quot;most_frequent&quot;</span>).fit(X_train, y_train)
+pred = lazy.predict(X_test)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;accuracy          <span class="hljs-subst">{accuracy_score(y_test, pred):<span class="hljs-number">.1</span>%}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;recall (found)    <span class="hljs-subst">{recall_score(y_test, pred):<span class="hljs-number">.1</span>%}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;balanced accuracy <span class="hljs-subst">{balanced_accuracy_score(y_test, pred):<span class="hljs-number">.1</span>%}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">accuracy          95.0%
+recall (found)    0.0%
+balanced accuracy 50.0%</pre></div></details></div>
+<p>Now a real model. <code>classification_report</code> prints precision, recall and F1 for each class:</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · confusion matrix and report</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.neighbors <span class="hljs-keyword">import</span> KNeighborsClassifier
+<span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> ConfusionMatrixDisplay, classification_report
+
+knn = KNeighborsClassifier(n_neighbors=<span class="hljs-number">5</span>).fit(X_train, y_train)
+pred = knn.predict(X_test)
+ConfusionMatrixDisplay.from_predictions(y_test, pred, display_labels=[<span class="hljs-string">&quot;negative&quot;</span>, <span class="hljs-string">&quot;positive&quot;</span>],
+                                        cmap=<span class="hljs-string">&quot;Purples&quot;</span>, colorbar=<span class="hljs-literal">False</span>)
+plt.title(<span class="hljs-string">&quot;kNN (k = 5) on the test set&quot;</span>)
+plt.grid(<span class="hljs-literal">False</span>)
+plt.show()
+<span class="hljs-built_in">print</span>(classification_report(y_test, pred, target_names=[<span class="hljs-string">&quot;negative&quot;</span>, <span class="hljs-string">&quot;positive&quot;</span>], digits=<span class="hljs-number">3</span>))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w1d5-cm-c329b651.png" width="450" height="438" alt="Figure produced by this code" loading="lazy"><pre class="text">              precision    recall  f1-score   support
+
+    negative      0.986     0.996     0.991       570
+    positive      0.917     0.733     0.815        30
+
+    accuracy                          0.983       600
+   macro avg      0.951     0.865     0.903       600
+weighted avg      0.983     0.983     0.982       600</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · moving the threshold</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> precision_score, f1_score
+
+score = knn.predict_proba(X_test)[:, <span class="hljs-number">1</span>]
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;threshold  precision  recall   F1    balanced acc&quot;</span>)
+<span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> [<span class="hljs-number">0.2</span>, <span class="hljs-number">0.4</span>, <span class="hljs-number">0.6</span>, <span class="hljs-number">0.8</span>, <span class="hljs-number">1.0</span>]:
+    p = (score &gt;= t).astype(<span class="hljs-built_in">int</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   <span class="hljs-subst">{t:<span class="hljs-number">.1</span>f}</span>      <span class="hljs-subst">{precision_score(y_test, p, zero_division=<span class="hljs-number">0</span>):<span class="hljs-number">6.1</span>%}</span>  <span class="hljs-subst">{recall_score(y_test, p):<span class="hljs-number">6.1</span>%}</span>&quot;</span>
+          <span class="hljs-string">f&quot;  <span class="hljs-subst">{f1_score(y_test, p):<span class="hljs-number">5.1</span>%}</span>   <span class="hljs-subst">{balanced_accuracy_score(y_test, p):<span class="hljs-number">6.1</span>%}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">threshold  precision  recall   F1    balanced acc
+   0.2       72.2%   86.7%  78.8%    92.5%
+   0.4       92.0%   76.7%  83.6%    88.2%
+   0.6       91.7%   73.3%  81.5%    86.5%
+   0.8       90.9%   66.7%  76.9%    83.2%
+   1.0       90.0%   60.0%  72.0%    79.8%</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: the scores by hand</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Take the four counts out of the confusion matrix and compute precision, recall, F1 and balanced accuracy <b>yourself</b>, from the formulas above. Then check them against scikit-learn.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> confusion_matrix
+
+tn, fp, fn, tp = confusion_matrix(y_test, pred).ravel()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;TN, FP, FN, TP =&quot;</span>, tn, fp, fn, tp)
+precision = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> of the examples called positive, the fraction that really are</span>
+recall = <span class="hljs-literal">None</span>      <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> of the real positives, the fraction we found</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;precision:&quot;</span>, precision, <span class="hljs-string">&quot; recall:&quot;</span>, recall)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>Balanced accuracy needs the recall of the negative class too: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>T</mi><mi>N</mi></mrow><mrow><mi>T</mi><mi>N</mi><mo>+</mo><mi>F</mi><mi>P</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{TN}{TN + FP}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2757em;vertical-align:-0.4033em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8723em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.10903em;">TN</span><span class="mbin mtight">+</span><span class="mord mathnormal mtight" style="margin-right:0.13889em;">FP</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.10903em;">TN</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4033em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span> (it's also called <b>specificity</b>).</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>tn, fp, fn, tp = confusion_matrix(y_test, pred).ravel()
+precision = tp / (tp + fp)
+recall = tp / (tp + fn)                    <span class="hljs-comment"># also called sensitivity, or true positive rate</span>
+specificity = tn / (tn + fp)               <span class="hljs-comment"># the recall of the negative class</span>
+f1 = <span class="hljs-number">2</span> * precision * recall / (precision + recall)
+balanced = (recall + specificity) / <span class="hljs-number">2</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;precision <span class="hljs-subst">{precision:<span class="hljs-number">.3</span>f}</span>   recall <span class="hljs-subst">{recall:<span class="hljs-number">.3</span>f}</span>   F1 <span class="hljs-subst">{f1:<span class="hljs-number">.3</span>f}</span>   balanced accuracy <span class="hljs-subst">{balanced:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;scikit-learn says: F1 <span class="hljs-subst">{f1_score(y_test, pred):<span class="hljs-number">.3</span>f}</span>, balanced accuracy <span class="hljs-subst">{balanced_accuracy_score(y_test, pred):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">precision 0.917   recall 0.733   F1 0.815   balanced accuracy 0.865
+scikit-learn says: F1 0.815, balanced accuracy 0.865</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w1d5" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">1% of transactions are fraud. A model that never flags fraud has 99% accuracy. Its balanced accuracy is…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's plain accuracy, the number that hides the problem."><span class="key">A</span><span>99%</span></button><button type="button" class="opt" data-i="1" data-why="Recall is 100% for the normal class and 0% for fraud. The average is 50%: no better than a coin."><span class="key">B</span><span>50%</span></button><button type="button" class="opt" data-i="2" data-why="That's the share of fraud, not a score."><span class="key">C</span><span>1%</span></button><button type="button" class="opt" data-i="3" data-why="It does get the normal transactions right, so it's not zero."><span class="key">D</span><span>0%</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w1d5" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">A spam filter must almost never send a real email to the spam folder. Which score matters most?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="High recall catches all the spam, possibly along with real emails."><span class="key">A</span><span>Recall of spam</span></button><button type="button" class="opt" data-i="1" data-why="Precision asks: of the emails called spam, how many really are? High precision means almost no real email gets binned."><span class="key">B</span><span>Precision of spam</span></button><button type="button" class="opt" data-i="2" data-why="Accuracy mixes both kinds of mistakes together."><span class="key">C</span><span>Accuracy</span></button><button type="button" class="opt" data-i="3" data-why="That's a property of the inbox, not of the filter."><span class="key">D</span><span>The number of spam emails</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="0" data-lesson="ml-w1d5" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">A model has TP = 8, FN = 2, FP = 10, TN = 80. What are its recall and precision?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Recall = 8 / (8 + 2) = 80%, and precision = 8 / (8 + 10) ≈ 44%. It finds most positives, but more than half of its alarms are false."><span class="key">A</span><span>Recall 80%, precision 44%</span></button><button type="button" class="opt" data-i="1" data-why="Those are swapped: recall uses FN, precision uses FP."><span class="key">B</span><span>Recall 44%, precision 80%</span></button><button type="button" class="opt" data-i="2" data-why="89% is the accuracy, (8 + 80) / 100 = 88%, almost."><span class="key">C</span><span>Recall 89%, precision 80%</span></button><button type="button" class="opt" data-i="3" data-why="88% is the accuracy, which hides the false alarms."><span class="key">D</span><span>Both 88%</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">The confusion matrix shows every kind of mistake. Precision, recall, F1 and balanced accuracy each tell part of the story, and on rare classes they tell the truth when accuracy lies.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Rare events are exactly where people hope quantum models might help: a faulty qubit, an unusual particle decay, a fraud case. They are also exactly where plain accuracy misleads. Benchmarking quantum classifiers on imbalanced data, with the right scores, is one of the research directions in Sara's group.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">ISLP chapter 4 (Classification) works through a credit-card default dataset where only 3% of people default, with confusion matrices, changing thresholds and ROC curves.</p>
+</div></div>
+<p class="muted mb0">That's week 1 of Machine Learning! On Saturday there's an optional five-minute flashback. Monday: regression, where the answer is a number.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w1d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w2d1.html"><img src="../assets/icons/linreg.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">The best-fit line and its loss bowl</span></span></a><div class="also-today" data-date="2026-10-23" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w1d4.html">← Hold data out</a><a href="../ml/w2d1.html">Best-fit line →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

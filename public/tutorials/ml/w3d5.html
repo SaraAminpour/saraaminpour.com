@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forests: many trees vote · Machine Learning · Quantum Path</title>
+<meta name="description" content="One deep tree overfits. Many trees, each grown on a random resample of the data, vote their way to a smoother and more reliable answer.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w3d5.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-3">Week 3 · Classification</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/forest.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Forests: many trees vote</h1>
+      <p class="subtitle">One deep tree overfits. Many trees, each grown on a random resample of the data, vote their way to a smoother and more reliable answer.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 7 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w3d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Explain bagging: bootstrap resamples, random features, and a vote</span></li><li><span>See why averaging many overfitting trees reduces variance</span></li><li><span>Use out-of-bag scores, and know what boosting does differently</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 7 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>The wisdom of crowds</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-cheer.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">This lesson is a short one. Ask one friend to guess the number of sweets in a jar and they'll be off. Ask a hundred and average their guesses: the errors cancel and the average is surprisingly close. A random forest does exactly that with trees.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Bagging, in three moves</h2></div><span class="mins">2 min</span></div><div class="card">
+<ol>
+<li><b>Resample.</b> Each tree gets its own <b>bootstrap</b> sample: draw <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> examples from the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> training examples <em>with replacement</em>. Some appear twice, about a third are left out.</li>
+<li><b>Randomize.</b> At each split, the tree may only choose among a random subset of the features. That makes the trees more different from each other.</li>
+<li><b>Vote.</b> Every tree classifies; the forest averages the votes.</li>
+</ol>
+<p>Each deep tree overfits, but each overfits <em>differently</em>. Averaging cancels much of that: it lowers the <b>variance</b> from week 2's bias–variance trade-off, without adding bias. And the left-out third of each tree's sample gives a free validation score, the <b>out-of-bag</b> accuracy.</p>
+<p><b>Boosting</b> combines trees the other way round: small trees grown one after another, each one correcting the mistakes of the trees before it.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Grow a forest</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Filled dots train the forest; rings are test points. Add trees and watch the boundary smooth out, then look at a single tree on its own.</p>
+<div data-widget="bag"></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Forests in scikit-learn</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w3d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w3d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w3d5.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · one deep tree versus a forest</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+<span class="hljs-keyword">from</span> sklearn.tree <span class="hljs-keyword">import</span> DecisionTreeClassifier
+<span class="hljs-keyword">from</span> sklearn.ensemble <span class="hljs-keyword">import</span> RandomForestClassifier
+<span class="hljs-keyword">from</span> matplotlib.colors <span class="hljs-keyword">import</span> LinearSegmentedColormap
+
+X, y = make_moons(n_samples=<span class="hljs-number">400</span>, noise=<span class="hljs-number">0.3</span>, random_state=<span class="hljs-number">3</span>)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="hljs-number">0.3</span>, random_state=<span class="hljs-number">0</span>)
+apricot_blue = LinearSegmentedColormap.from_list(<span class="hljs-string">&quot;apricot_blue&quot;</span>, [<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#ffffff&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>])
+models = {
+    <span class="hljs-string">&quot;one deep tree&quot;</span>: DecisionTreeClassifier(random_state=<span class="hljs-number">0</span>),
+    <span class="hljs-string">&quot;forest of 200 trees&quot;</span>: RandomForestClassifier(n_estimators=<span class="hljs-number">200</span>, random_state=<span class="hljs-number">0</span>),
+}
+xx, yy = np.meshgrid(np.linspace(-<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">250</span>), np.linspace(-<span class="hljs-number">1.5</span>, <span class="hljs-number">2</span>, <span class="hljs-number">200</span>))
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">10</span>, <span class="hljs-number">3.6</span>), sharey=<span class="hljs-literal">True</span>, layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, (name, model) <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, models.items()):
+    model.fit(X_train, y_train)
+    p = model.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, <span class="hljs-number">1</span>].reshape(xx.shape)
+    ax.contourf(xx, yy, p, levels=<span class="hljs-number">20</span>, cmap=apricot_blue, alpha=<span class="hljs-number">0.5</span>)
+    ax.scatter(X_train[:, <span class="hljs-number">0</span>], X_train[:, <span class="hljs-number">1</span>], c=np.where(y_train == <span class="hljs-number">0</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>), s=<span class="hljs-number">12</span>)
+    ax.set_title(<span class="hljs-string">f&quot;<span class="hljs-subst">{name}</span>: test accuracy <span class="hljs-subst">{model.score(X_test, y_test):<span class="hljs-number">.2</span>f}</span>&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w3d5-forest-691dd921.png" width="1112" height="408" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the out-of-bag score</span><button type="button" class="btn-copy">Copy</button></div><pre><code>rf = RandomForestClassifier(n_estimators=<span class="hljs-number">200</span>, oob_score=<span class="hljs-literal">True</span>, random_state=<span class="hljs-number">0</span>).fit(X_train, y_train)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;out-of-bag accuracy: <span class="hljs-subst">{rf.oob_score_:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;test accuracy:       <span class="hljs-subst">{rf.score(X_test, y_test):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">out-of-bag accuracy: 0.900
+test accuracy:       0.875</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · boosting</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.ensemble <span class="hljs-keyword">import</span> GradientBoostingClassifier
+
+gb = GradientBoostingClassifier(n_estimators=<span class="hljs-number">200</span>, max_depth=<span class="hljs-number">2</span>, learning_rate=<span class="hljs-number">0.1</span>, random_state=<span class="hljs-number">0</span>).fit(X_train, y_train)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;gradient boosting test accuracy: <span class="hljs-subst">{gb.score(X_test, y_test):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">gradient boosting test accuracy: 0.842</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn (if you have energy left): how many trees?</h2></div><span class="mins">optional</span></div><div class="card">
+<p>Train forests of 1 to 300 trees and print their test accuracy. Where does it level off?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">10</span>, <span class="hljs-number">30</span>, <span class="hljs-number">100</span>, <span class="hljs-number">300</span>]:
+    acc = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> fit RandomForestClassifier(n_estimators=n, random_state=0) and score it on the test set</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{n:3d}</span> trees: test accuracy <span class="hljs-subst">{acc}</span>&quot;</span>)</code></pre></div>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">10</span>, <span class="hljs-number">30</span>, <span class="hljs-number">100</span>, <span class="hljs-number">300</span>]:
+    acc = RandomForestClassifier(n_estimators=n, random_state=<span class="hljs-number">0</span>).fit(X_train, y_train).score(X_test, y_test)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{n:3d}</span> trees: test accuracy <span class="hljs-subst">{acc:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Accuracy climbs quickly, then levels off: adding trees doesn&#x27;t make a forest overfit, it just costs more time.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">  1 trees: test accuracy 0.808
+  3 trees: test accuracy 0.842
+ 10 trees: test accuracy 0.842
+ 30 trees: test accuracy 0.858
+100 trees: test accuracy 0.858
+300 trees: test accuracy 0.867
+Accuracy climbs quickly, then levels off: adding trees doesn't make a forest overfit, it just costs more time.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w3d5" data-qid="q1"><div class="qn">Question 1 of 2</div><div class="prompt">Why does a random forest usually beat one very deep tree on new data?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Trees aren't trained with gradient descent."><span class="key">A</span><span>It uses a bigger learning rate</span></button><button type="button" class="opt" data-i="1" data-why="Each tree overfits differently; their vote is far steadier than any one of them."><span class="key">B</span><span>Averaging many different trees cancels out their individual overfitting</span></button><button type="button" class="opt" data-i="2" data-why="They have plenty: number of trees, depth, features per split..."><span class="key">C</span><span>Forests have no parameters</span></button><button type="button" class="opt" data-i="3" data-why="Never!"><span class="key">D</span><span>It uses the test set</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w3d5" data-qid="q2"><div class="qn">Question 2 of 2</div><div class="prompt">What is a bootstrap sample of 100 examples?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Order has nothing to do with it."><span class="key">A</span><span>The first 100 examples</span></button><button type="button" class="opt" data-i="1" data-why="Drawing with replacement makes every tree's data a little different; about a third of the examples are left out of each sample."><span class="key">B</span><span>100 examples drawn at random with replacement, so some repeat</span></button><button type="button" class="opt" data-i="2" data-why="Boosting focuses on hard examples, not bagging."><span class="key">C</span><span>The 100 hardest examples</span></button><button type="button" class="opt" data-i="3" data-why="The examples are real, just resampled."><span class="key">D</span><span>100 synthetic examples</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>This week in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Classifiers output scores that softmax turns into probabilities and cross-entropy trains; rare classes need weights, resampling or a new threshold; trees ask yes/no questions, and forests of them vote away their overfitting.</div>
+<p class="muted mb0">That's week 3 of Machine Learning! Saturday has an optional flashback. Next week: kernels, the idea quantum machine learning builds on.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w3d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w4d1.html"><img src="../assets/icons/lift.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Feature maps: lift your data</span></span></a><div class="also-today" data-date="2026-11-06" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w3d4.html">← Decision trees</a><a href="../ml/w4d1.html">Feature maps →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

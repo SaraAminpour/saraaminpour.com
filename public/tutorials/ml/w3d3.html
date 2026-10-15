@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When one class is rare · Machine Learning · Quantum Path</title>
+<meta name="description" content="When 97% of the examples belong to one class, a model can win by ignoring the other. Here is how to make it pay attention, and how to judge whether it did.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w3d3.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-3">Week 3 · Classification</a><span class="muted">›</span><span class="chip plain">Day 3</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/scales.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>When one class is rare</h1>
+      <p class="subtitle">When 97% of the examples belong to one class, a model can win by ignoring the other. Here is how to make it pay attention, and how to judge whether it did.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 11 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w3d3.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Explain why training on imbalanced data pushes a model to ignore the rare class</span></li><li><span>Fix it with class weights, resampling or a different threshold</span></li><li><span>Read the precision–recall trade-off, and choose according to what mistakes cost</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 11 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Rare, and important</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">In week 1 you saw that accuracy can lie when one class is rare: a "model" that never finds the disease still scores 95%. Rare classes are often exactly the ones that matter: a fraud, a failing machine, a faulty qubit. Today: how to <em>train</em> a classifier that still finds them.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Change what you ask for</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Training minimizes the <b>average</b> loss. With 97 common examples for every 3 rare ones, the common class dominates that average, and the cheapest way to make it small is to push the boundary into the rare class. The model isn't broken: it's doing exactly what we asked. So we change what we ask:</p>
+<div class="compare">
+<div><h4>1. Class weights</h4><p>Give each example a weight in the loss, larger for the rare class. With "balanced" weights <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>c</mi></msub><mo>=</mo><mfrac><mi>n</mi><mrow><mn>2</mn><mtext> </mtext><msub><mi>n</mi><mi>c</mi></msub></mrow></mfrac></mrow><annotation encoding="application/x-tex">w_c = \frac{n}{2\,n_c}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5806em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.0269em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.1405em;vertical-align:-0.4451em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.6954em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">2</span><span class="mspace mtight" style="margin-right:0.1952em;"></span><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1645em;"><span style="top:-2.357em;margin-left:0em;margin-right:0.0714em;"><span class="pstrut" style="height:2.5em;"></span><span class="sizing reset-size3 size1 mtight"><span class="mord mathnormal mtight">c</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.143em;"><span></span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.4451em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span>, both classes count equally in total. scikit-learn: <code>class_weight="balanced"</code>; PyTorch: <code>pos_weight</code> or <code>weight=</code> in the loss.</p></div>
+<div><h4>2. Resampling</h4><p>Repeat rare examples (oversampling), drop common ones (undersampling), or create new rare points between existing neighbors (SMOTE). <b>Only on the training set</b>: the test set must stay as the real world is.</p></div>
+</div>
+<p><b>3. Move the threshold.</b> Keep the model, but call an example rare when <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false">(</mo><mtext>rare</mtext><mo stretchy="false">)</mo><mo>≥</mo><mn>0.2</mn></mrow><annotation encoding="application/x-tex">P(\text{rare}) \ge 0.2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="mopen">(</span><span class="mord text"><span class="mord">rare</span></span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.2</span></span></span></span> instead of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.5</mn></mrow><annotation encoding="application/x-tex">0.5</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.5</span></span></span></span>.</p>
+<p>All three trade the same two things: <b>recall</b> (how many rare examples you find) against <b>precision</b> (how many of your alarms are right). The <b>precision–recall curve</b> shows the whole trade-off as the threshold moves, and its area (<b>average precision</b>) is a single score that focuses on the rare class.</p>
+<p class="big-idea">There's no free lunch: finding more rare cases costs more false alarms. Which balance is right depends on what each kind of mistake costs.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Make the model look</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Shrink the rare class's share and watch plain training give up on it. Then switch on class weights, or move the threshold yourself.</p>
+<div data-widget="rare"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">At 2%, plain training finds almost nothing, yet its accuracy is the highest. Switch on class weights: recall jumps, accuracy drops, precision drops. Now go back to plain and lower the threshold instead: can you reach a similar balance?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The three fixes in code</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w3d3.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w3d3.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w3d3.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · 3% rare</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_classification
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+<span class="hljs-keyword">from</span> sklearn.linear_model <span class="hljs-keyword">import</span> LogisticRegression
+<span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> recall_score, precision_score, f1_score, balanced_accuracy_score, accuracy_score
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+X, y = make_classification(n_samples=<span class="hljs-number">3000</span>, n_features=<span class="hljs-number">2</span>, n_informative=<span class="hljs-number">2</span>, n_redundant=<span class="hljs-number">0</span>, n_clusters_per_class=<span class="hljs-number">1</span>,
+                           weights=[<span class="hljs-number">0.97</span>, <span class="hljs-number">0.03</span>], class_sep=<span class="hljs-number">0.9</span>, flip_y=<span class="hljs-number">0</span>, random_state=<span class="hljs-number">2</span>)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">0.3</span>, stratify=y, random_state=<span class="hljs-number">0</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;training set: <span class="hljs-subst">{<span class="hljs-built_in">len</span>(y_tr)}</span> examples, <span class="hljs-subst">{y_tr.<span class="hljs-built_in">sum</span>()}</span> rare (<span class="hljs-subst">{y_tr.mean():<span class="hljs-number">.1</span>%}</span>)&quot;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">report</span>(<span class="hljs-params">name, pred</span>):
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{name:&gt;<span class="hljs-number">22</span>}</span>: accuracy <span class="hljs-subst">{accuracy_score(y_te, pred):<span class="hljs-number">.3</span>f}</span>  recall <span class="hljs-subst">{recall_score(y_te, pred):<span class="hljs-number">.3</span>f}</span>  &quot;</span>
+          <span class="hljs-string">f&quot;precision <span class="hljs-subst">{precision_score(y_te, pred, zero_division=<span class="hljs-number">0</span>):<span class="hljs-number">.3</span>f}</span>  F1 <span class="hljs-subst">{f1_score(y_te, pred):<span class="hljs-number">.3</span>f}</span>  &quot;</span>
+          <span class="hljs-string">f&quot;balanced <span class="hljs-subst">{balanced_accuracy_score(y_te, pred):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">training set: 2100 examples, 63 rare (3.0%)</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · plain versus class weights</span><button type="button" class="btn-copy">Copy</button></div><pre><code>plain = LogisticRegression().fit(X_tr, y_tr)
+weighted = LogisticRegression(class_weight=<span class="hljs-string">&quot;balanced&quot;</span>).fit(X_tr, y_tr)
+report(<span class="hljs-string">&quot;plain&quot;</span>, plain.predict(X_te))
+report(<span class="hljs-string">&quot;class weights&quot;</span>, weighted.predict(X_te))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">                 plain: accuracy 0.976  recall 0.185  precision 1.000  F1 0.312  balanced 0.593
+         class weights: accuracy 0.810  recall 0.889  precision 0.125  F1 0.219  balanced 0.848</pre></div></details></div>
+<p>Class weights lifted recall from 19% to 89% and balanced accuracy from 0.59 to 0.85, but precision fell to 12%: most alarms are now false. For screening a disease that's often the right trade; for a spam filter it would be terrible.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · the same with PyTorch's pos_weight</span><button type="button" class="btn-copy">Copy</button></div><pre><code>Xt = torch.tensor(X_tr, dtype=torch.float32)
+yt = torch.tensor(y_tr, dtype=torch.float32).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>)
+pos_weight = torch.tensor([(y_tr == <span class="hljs-number">0</span>).<span class="hljs-built_in">sum</span>() / (y_tr == <span class="hljs-number">1</span>).<span class="hljs-built_in">sum</span>()])     <span class="hljs-comment"># about 32: one rare example counts like 32 common ones</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;pos_weight = <span class="hljs-subst">{pos_weight.item():<span class="hljs-number">.1</span>f}</span>&quot;</span>)
+
+torch.manual_seed(<span class="hljs-number">0</span>)
+model = torch.nn.Linear(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>)
+loss_fn = torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+optimizer = torch.optim.Adam(model.parameters(), lr=<span class="hljs-number">0.05</span>)
+<span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">500</span>):
+    optimizer.zero_grad()
+    loss_fn(model(Xt), yt).backward()
+    optimizer.step()
+<span class="hljs-keyword">with</span> torch.no_grad():
+    pred = (model(torch.tensor(X_te, dtype=torch.float32)) &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">int</span>().numpy().ravel()
+report(<span class="hljs-string">&quot;PyTorch, pos_weight&quot;</span>, pred)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">pos_weight = 32.3
+   PyTorch, pos_weight: accuracy 0.810  recall 0.889  precision 0.125  F1 0.219  balanced 0.848</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · thresholds and the precision–recall curve</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.metrics <span class="hljs-keyword">import</span> precision_recall_curve, average_precision_score
+
+score = plain.predict_proba(X_te)[:, <span class="hljs-number">1</span>]
+<span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> [<span class="hljs-number">0.5</span>, <span class="hljs-number">0.3</span>, <span class="hljs-number">0.1</span>]:
+    report(<span class="hljs-string">f&quot;plain, threshold <span class="hljs-subst">{t}</span>&quot;</span>, (score &gt;= t).astype(<span class="hljs-built_in">int</span>))
+
+prec, rec, _ = precision_recall_curve(y_te, score)
+plt.figure(figsize=(<span class="hljs-number">5.4</span>, <span class="hljs-number">3.8</span>))
+plt.plot(rec, prec, color=<span class="hljs-string">&quot;#ff8a50&quot;</span>, lw=<span class="hljs-number">2.5</span>, label=<span class="hljs-string">f&quot;plain model (average precision <span class="hljs-subst">{average_precision_score(y_te, score):<span class="hljs-number">.2</span>f}</span>)&quot;</span>)
+plt.axhline(y_te.mean(), color=<span class="hljs-string">&quot;#bcb7cb&quot;</span>, ls=<span class="hljs-string">&quot;--&quot;</span>, label=<span class="hljs-string">f&quot;random guessing (<span class="hljs-subst">{y_te.mean():<span class="hljs-number">.2</span>f}</span>)&quot;</span>)
+plt.xlabel(<span class="hljs-string">&quot;recall (rare examples found)&quot;</span>)
+plt.ylabel(<span class="hljs-string">&quot;precision (alarms that are right)&quot;</span>)
+plt.legend(loc=<span class="hljs-string">&quot;lower left&quot;</span>)
+plt.title(<span class="hljs-string">&quot;Every threshold, from strict (left) to generous (right)&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">  plain, threshold 0.5: accuracy 0.976  recall 0.185  precision 1.000  F1 0.312  balanced 0.593
+  plain, threshold 0.3: accuracy 0.974  recall 0.333  precision 0.643  F1 0.439  balanced 0.664
+  plain, threshold 0.1: accuracy 0.953  recall 0.481  precision 0.317  F1 0.382  balanced 0.725</pre><img src="../assets/out/ml-w3d3-pr-c3687aa2.png" width="536" height="421" alt="Figure produced by this code" loading="lazy"></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: oversample by hand</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Make the classes equal in the training set by repeating randomly chosen rare examples, then train a plain logistic regression. How does it compare with class weights?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>rng = np.random.default_rng(<span class="hljs-number">0</span>)
+rare_idx = np.flatnonzero(y_tr == <span class="hljs-number">1</span>)
+common_idx = np.flatnonzero(y_tr == <span class="hljs-number">0</span>)
+extra = np.array([], dtype=<span class="hljs-built_in">int</span>)    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> rng.choice(rare_idx, size=..., replace=True) to make the classes equal</span>
+idx = np.concatenate([common_idx, rare_idx, extra])
+over = LogisticRegression().fit(X_tr[idx], y_tr[idx])
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;rare share after resampling:&quot;</span>, <span class="hljs-built_in">round</span>(y_tr[idx].mean(), <span class="hljs-number">3</span>))
+report(<span class="hljs-string">&quot;oversampled&quot;</span>, over.predict(X_te))</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>You need <code>len(common_idx) - len(rare_idx)</code> extra rare rows: <code>rng.choice(rare_idx, size=..., replace=True)</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>extra = rng.choice(rare_idx, size=<span class="hljs-built_in">len</span>(common_idx) - <span class="hljs-built_in">len</span>(rare_idx), replace=<span class="hljs-literal">True</span>)
+idx = np.concatenate([common_idx, rare_idx, extra])
+over = LogisticRegression().fit(X_tr[idx], y_tr[idx])
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;rare share after resampling:&quot;</span>, <span class="hljs-built_in">round</span>(y_tr[idx].mean(), <span class="hljs-number">3</span>))
+report(<span class="hljs-string">&quot;oversampled&quot;</span>, over.predict(X_te))
+report(<span class="hljs-string">&quot;class weights&quot;</span>, weighted.predict(X_te))
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Duplicating rare examples has almost the same effect as weighting them: both make the rare class count more.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">rare share after resampling: 0.5
+           oversampled: accuracy 0.809  recall 0.889  precision 0.124  F1 0.218  balanced 0.848
+         class weights: accuracy 0.810  recall 0.889  precision 0.125  F1 0.219  balanced 0.848
+Duplicating rare examples has almost the same effect as weighting them: both make the rare class count more.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w3d3" data-qid="q1"><div class="qn">Question 1 of 4</div><div class="prompt">Why does a plain classifier trained on 2% positives often predict 'negative' for almost everything?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="It's doing exactly what it was asked."><span class="key">A</span><span>It has a bug</span></button><button type="button" class="opt" data-i="1" data-why="98% of the loss comes from negatives; getting them right matters far more to the average than finding the few positives."><span class="key">B</span><span>The average loss is dominated by the negatives, so ignoring the positives is cheap</span></button><button type="button" class="opt" data-i="2" data-why="They can, if they count more: weights or resampling."><span class="key">C</span><span>Positives can't be learned</span></button><button type="button" class="opt" data-i="3" data-why="More steps wouldn't change what the loss rewards."><span class="key">D</span><span>The learning rate is too small</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w3d3" data-qid="q2"><div class="qn">Question 2 of 4</div><div class="prompt">What does <code>class_weight="balanced"</code> do?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's undersampling, a different fix."><span class="key">A</span><span>Removes examples until the classes are equal</span></button><button type="button" class="opt" data-i="1" data-why="Rare examples get big weights, common ones small weights."><span class="key">B</span><span>Weighs each example by the inverse of its class's frequency, so both classes count equally in the loss</span></button><button type="button" class="opt" data-i="2" data-why="The threshold is a separate choice."><span class="key">C</span><span>Moves the threshold to 0.5</span></button><button type="button" class="opt" data-i="3" data-why="It acts on the classes, not the features."><span class="key">D</span><span>Balances the features</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w3d3" data-qid="q3"><div class="qn">Question 3 of 4</div><div class="prompt">When should you oversample the rare class?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Then copies of the same example land in both sets: leakage, and a test set unlike the real world."><span class="key">A</span><span>Before splitting into training and test sets</span></button><button type="button" class="opt" data-i="1" data-why="The test set must keep the real class balance to measure honestly."><span class="key">B</span><span>After splitting, on the training set only</span></button><button type="button" class="opt" data-i="2" data-why="Never on the test set."><span class="key">C</span><span>On the test set only</span></button><button type="button" class="opt" data-i="3" data-why="The test set must stay untouched."><span class="key">D</span><span>On both sets</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="0" data-lesson="ml-w3d3" data-qid="q4"><div class="qn">Question 4 of 4</div><div class="prompt">You lower the decision threshold from 0.5 to 0.2. Usually…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="More examples get called positive: you find more of the real ones, but more alarms are false."><span class="key">A</span><span>Recall goes up, precision goes down</span></button><button type="button" class="opt" data-i="1" data-why="There's a trade-off: you can't usually win both."><span class="key">B</span><span>Both go up</span></button><button type="button" class="opt" data-i="2" data-why="Recall can't go down when you call more examples positive."><span class="key">C</span><span>Both go down</span></button><button type="button" class="opt" data-i="3" data-why="The predictions change, so the scores do too."><span class="key">D</span><span>Nothing changes</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">On imbalanced data a model ignores the rare class because that's cheapest for the average loss; class weights, resampling or a lower threshold make it look, at the price of more false alarms, so judge it with recall, precision and the precision–recall curve.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">This is one of Sara's research topics: benchmarking quantum classifiers on imbalanced data. The same fixes carry over: a quantum classifier can be trained with a class-weighted loss, and a quantum-kernel SVM accepts class weights just like a classical one. In the Quantum ML tutorial you'll compare quantum and classical models with exactly these scores.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">He and Garcia, "Learning from imbalanced data" (IEEE Transactions on Knowledge and Data Engineering, 2009) is the classic survey. SMOTE comes from Chawla and coauthors (Journal of Artificial Intelligence Research, 2002).</p>
+</div></div>
+<p class="muted mb0">Next in Machine Learning: a completely different kind of classifier, one that asks yes/no questions: decision trees.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w3d3">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w3d4.html"><img src="../assets/icons/tree.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Decision trees</span></span></a><div class="also-today" data-date="2026-11-04" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w3d2.html">← Cross-entropy</a><a href="../ml/w3d4.html">Decision trees →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

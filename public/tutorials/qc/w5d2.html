@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Superdense coding · Quantum Computing · Quantum Path</title>
+<meta name="description" content="Send two classical bits by sending one qubit: a shared Bell pair, one gate from Alice, and Bob's Bell circuit run backwards.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qc-w5d2.js?v=mva52clc"></script>
+</head>
+<body class="track-qc">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html" aria-current="page"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qc/index.html">Quantum Computing</a><span class="muted">›</span><a href="../qc/index.html#week-5">Week 5 · Quantum protocols and algorithms</a><span class="muted">›</span><span class="chip plain">Day 2</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qc"><img src="../assets/icons/dense.svg" alt=""></div>
+    <div>
+      <span class="chip qc"><span class="dot"></span>Quantum Computing</span>
+      <h1>Superdense coding</h1>
+      <p class="subtitle">Send two classical bits by sending one qubit: a shared Bell pair, one gate from Alice, and Bob's Bell circuit run backwards.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 10 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qc-w5d2.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Encode two bits with I, X, Z or both on one half of a Bell pair</span></li><li><span>Decode them with a CNOT and an H, and explain why it always works</span></li><li><span>Explain why a spy who catches the qubit learns nothing</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 10 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Two for the price of one</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">One qubit, measured, gives one bit. So it seems a qubit can carry at most one bit of message. Yesterday, two bits plus a Bell pair carried one qubit. Today the same ingredients run the other way round: one qubit plus a Bell pair carries two bits.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Four gates, four Bell states</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Alice and Bob share <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi mathvariant="normal">Φ</mi><mo>+</mo></msup><mo stretchy="false">⟩</mo><mo>=</mo><mfrac><mn>1</mn><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="false">(</mo><mi mathvariant="normal">∣</mi><mn>00</mn><mo stretchy="false">⟩</mo><mo>+</mo><mi mathvariant="normal">∣</mi><mn>11</mn><mo stretchy="false">⟩</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">|\Phi^+\rangle = \frac{1}{\sqrt2}(|00\rangle + |11\rangle)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0213em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord">Φ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7713em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">+</span></span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3831em;vertical-align:-0.538em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.551em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mtight" style="padding-left:0.833em;">2</span></span><span style="top:-2.8728em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.538em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mopen">(</span><span class="mord">∣00</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣11</span><span class="mclose">⟩)</span></span></span></span> from earlier. Alice keeps q0; Bob holds q1. To send two bits, Alice applies one of four gates to <em>her qubit only</em>:</p>
+<table class="tablelike data-table">
+<tr><th>Message (as Qiskit prints it)</th><th>Alice applies</th><th>The pair becomes</th></tr>
+<tr><td>00</td><td>nothing</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi mathvariant="normal">Φ</mi><mo>+</mo></msup><mo stretchy="false">⟩</mo><mo>=</mo><mfrac><mn>1</mn><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="false">(</mo><mi mathvariant="normal">∣</mi><mn>00</mn><mo stretchy="false">⟩</mo><mo>+</mo><mi mathvariant="normal">∣</mi><mn>11</mn><mo stretchy="false">⟩</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">|\Phi^+\rangle = \frac{1}{\sqrt2}(|00\rangle + |11\rangle)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0213em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord">Φ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7713em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">+</span></span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3831em;vertical-align:-0.538em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.551em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mtight" style="padding-left:0.833em;">2</span></span><span style="top:-2.8728em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.538em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mopen">(</span><span class="mord">∣00</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣11</span><span class="mclose">⟩)</span></span></span></span></td></tr>
+<tr><td>01</td><td>Z</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi mathvariant="normal">Φ</mi><mo>−</mo></msup><mo stretchy="false">⟩</mo><mo>=</mo><mfrac><mn>1</mn><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="false">(</mo><mi mathvariant="normal">∣</mi><mn>00</mn><mo stretchy="false">⟩</mo><mo>−</mo><mi mathvariant="normal">∣</mi><mn>11</mn><mo stretchy="false">⟩</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">|\Phi^-\rangle = \frac{1}{\sqrt2}(|00\rangle - |11\rangle)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0213em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord">Φ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7713em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">−</span></span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3831em;vertical-align:-0.538em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.551em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mtight" style="padding-left:0.833em;">2</span></span><span style="top:-2.8728em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.538em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mopen">(</span><span class="mord">∣00</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣11</span><span class="mclose">⟩)</span></span></span></span></td></tr>
+<tr><td>10</td><td>X</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi mathvariant="normal">Ψ</mi><mo>+</mo></msup><mo stretchy="false">⟩</mo><mo>=</mo><mfrac><mn>1</mn><msqrt><mn>2</mn></msqrt></mfrac><mo stretchy="false">(</mo><mi mathvariant="normal">∣</mi><mn>01</mn><mo stretchy="false">⟩</mo><mo>+</mo><mi mathvariant="normal">∣</mi><mn>10</mn><mo stretchy="false">⟩</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">|\Psi^+\rangle = \frac{1}{\sqrt2}(|01\rangle + |10\rangle)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0213em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord">Ψ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7713em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">+</span></span></span></span></span></span></span></span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.3831em;vertical-align:-0.538em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.8451em;"><span style="top:-2.551em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord sqrt mtight"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.9128em;"><span class="svg-align" style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord mtight" style="padding-left:0.833em;">2</span></span><span style="top:-2.8728em;"><span class="pstrut" style="height:3em;"></span><span class="hide-tail mtight" style="min-width:0.853em;height:1.08em;"><svg xmlns="http://www.w3.org/2000/svg" width="400em" height="1.08em" viewBox="0 0 400000 1080" preserveAspectRatio="xMinYMin slice"><path d="M95,702
+c-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14
+c0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54
+c44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10
+s173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429
+c69,-144,104.5,-217.7,106.5,-221
+l0 -0
+c5.3,-9.3,12,-14,20,-14
+H400000v40H845.2724
+s-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7
+c-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z
+M834 80h400000v40h-400000z"/></svg></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.1272em;"><span></span></span></span></span></span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.394em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">1</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.538em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mopen">(</span><span class="mord">∣01</span><span class="mclose">⟩</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣10</span><span class="mclose">⟩)</span></span></span></span></td></tr>
+<tr><td>11</td><td>X, then Z</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">∣</mi><msup><mi mathvariant="normal">Ψ</mi><mo>−</mo></msup><mo stretchy="false">⟩</mo></mrow><annotation encoding="application/x-tex">|\Psi^-\rangle</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0213em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord">Ψ</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7713em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">−</span></span></span></span></span></span></span></span><span class="mclose">⟩</span></span></span></span> (up to a sign)</td></tr>
+</table>
+<p>These four Bell states are <b>orthogonal</b>: completely different from each other, so they can be told apart with certainty. Alice sends her single qubit to Bob. Now he holds both, and runs the Bell circuit backwards: a CNOT, then H. That turns each Bell state into one basis state, and his measurement reads the two bits.</p>
+<p><b>Why it doesn't break the "one bit per qubit" rule:</b> the second qubit was delivered earlier, inside the Bell pair. Count everything: one shared Bell pair plus one qubit sent gives two bits. Teleportation is the mirror image: one shared Bell pair plus two bits sent gives one qubit.</p>
+<p><b>A built-in privacy:</b> the traveling qubit, on its own, is a fair coin for all four messages. A spy who catches it learns nothing, and if she measures it, she breaks the pair and Bob gets wrong results, which Alice and Bob can notice.</p>
+<p class="big-idea">Entanglement shared in advance doubles what one qubit can carry: two bits per qubit sent.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Send a message</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Pick two bits and press the step button four times. Watch the amplitudes: the four messages give four different Bell states, and Bob's two gates turn each into a single bar.</p>
+<div data-widget="dense"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Send all four messages. Then switch on Eve and send ten more: her reading is a coin flip that tells her nothing, and Bob gets about half of the messages wrong. Which of the two bits gets scrambled?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Superdense coding in Qiskit</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qc-w5d2.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qc/qc-w5d2.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qc/qc-w5d2.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · encode and decode</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit, transpile
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> Statevector, partial_trace
+<span class="hljs-keyword">from</span> qiskit.primitives <span class="hljs-keyword">import</span> StatevectorSampler
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">encode</span>(<span class="hljs-params">message</span>):
+    <span class="hljs-string">&quot;&quot;&quot;The shared Bell pair, then Alice&#x27;s gate on her qubit q0. message = two bits, as Qiskit prints them.&quot;&quot;&quot;</span>
+    qc = QuantumCircuit(<span class="hljs-number">2</span>)
+    qc.h(<span class="hljs-number">0</span>)
+    qc.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)                    <span class="hljs-comment"># the Bell pair: q0 for Alice, q1 for Bob</span>
+    qc.barrier()
+    <span class="hljs-keyword">if</span> message[<span class="hljs-number">0</span>] == <span class="hljs-string">&quot;1&quot;</span>:
+        qc.x(<span class="hljs-number">0</span>)                    <span class="hljs-comment"># the left bit decides X...</span>
+    <span class="hljs-keyword">if</span> message[<span class="hljs-number">1</span>] == <span class="hljs-string">&quot;1&quot;</span>:
+        qc.z(<span class="hljs-number">0</span>)                    <span class="hljs-comment"># ...and the right bit decides Z</span>
+    qc.barrier()
+    <span class="hljs-keyword">return</span> qc
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">superdense</span>(<span class="hljs-params">message</span>):
+    qc = encode(message)
+    qc.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)                    <span class="hljs-comment"># Bob, after receiving q0: the Bell circuit backwards</span>
+    qc.h(<span class="hljs-number">0</span>)
+    qc.measure_all()
+    <span class="hljs-keyword">return</span> qc
+
+superdense(<span class="hljs-string">&quot;11&quot;</span>).draw(<span class="hljs-string">&quot;mpl&quot;</span>, style=<span class="hljs-string">&quot;clifford&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/qc-w5d2-encode-765e6c45.png" width="938" height="262" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · send all four messages</span><button type="button" class="btn-copy">Copy</button></div><pre><code>sampler = StatevectorSampler(seed=<span class="hljs-number">1</span>)
+<span class="hljs-keyword">for</span> message <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;00&quot;</span>, <span class="hljs-string">&quot;01&quot;</span>, <span class="hljs-string">&quot;10&quot;</span>, <span class="hljs-string">&quot;11&quot;</span>]:
+    counts = sampler.run([superdense(message)], shots=<span class="hljs-number">1000</span>).result()[<span class="hljs-number">0</span>].data.meas.get_counts()
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Alice sends <span class="hljs-subst">{message}</span> -&gt; Bob reads <span class="hljs-subst">{counts}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">Alice sends 00 -&gt; Bob reads {'00': 1000}
+Alice sends 01 -&gt; Bob reads {'01': 1000}
+Alice sends 10 -&gt; Bob reads {'10': 1000}
+Alice sends 11 -&gt; Bob reads {'11': 1000}</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · four orthogonal Bell states</span><button type="button" class="btn-copy">Copy</button></div><pre><code>states = {m: Statevector(encode(m)) <span class="hljs-keyword">for</span> m <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;00&quot;</span>, <span class="hljs-string">&quot;01&quot;</span>, <span class="hljs-string">&quot;10&quot;</span>, <span class="hljs-string">&quot;11&quot;</span>]}
+<span class="hljs-keyword">for</span> m, sv <span class="hljs-keyword">in</span> states.items():
+    <span class="hljs-built_in">print</span>(m, <span class="hljs-string">&quot;-&gt;&quot;</span>, np.<span class="hljs-built_in">round</span>(sv.data.real, <span class="hljs-number">3</span>) + <span class="hljs-number">0.0</span>, <span class="hljs-string">&quot;   (amplitudes of 00, 01, 10, 11)&quot;</span>)
+
+overlaps = np.array([[<span class="hljs-built_in">abs</span>(states[a].inner(states[b])) ** <span class="hljs-number">2</span> <span class="hljs-keyword">for</span> b <span class="hljs-keyword">in</span> states] <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> states])
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n|&lt;a|b&gt;|^2 for every pair of messages:&quot;</span>)
+<span class="hljs-built_in">print</span>(np.<span class="hljs-built_in">round</span>(overlaps, <span class="hljs-number">3</span>) + <span class="hljs-number">0.0</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">00 -&gt; [0.707 0.    0.    0.707]    (amplitudes of 00, 01, 10, 11)
+01 -&gt; [ 0.707  0.     0.    -0.707]    (amplitudes of 00, 01, 10, 11)
+10 -&gt; [0.    0.707 0.707 0.   ]    (amplitudes of 00, 01, 10, 11)
+11 -&gt; [ 0.    -0.707  0.707  0.   ]    (amplitudes of 00, 01, 10, 11)
+
+|&lt;a|b&gt;|^2 for every pair of messages:
+[[1. 0. 0. 0.]
+ [0. 1. 0. 0.]
+ [0. 0. 1. 0.]
+ [0. 0. 0. 1.]]</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: Eve's view</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Eve catches the qubit on its way. Compute the state of q0 alone for each message with <code>partial_trace</code>. Can she tell the messages apart?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> message, sv <span class="hljs-keyword">in</span> states.items():
+    eve_view = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> partial_trace(sv, [1]) keeps q0 and averages over q1</span>
+    <span class="hljs-built_in">print</span>(message, eve_view)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>partial_trace(sv, [1])</code> removes qubit 1 (Bob's) and leaves q0's density matrix. You met it in yesterday's notebook.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> message, sv <span class="hljs-keyword">in</span> states.items():
+    eve_view = partial_trace(sv, [<span class="hljs-number">1</span>])
+    <span class="hljs-built_in">print</span>(message, <span class="hljs-string">&quot;Eve&#x27;s qubit:&quot;</span>, (np.<span class="hljs-built_in">round</span>(eve_view.data.real, <span class="hljs-number">3</span>) + <span class="hljs-number">0.0</span>).tolist())
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The same matrix I/2 for every message: Eve sees a fair coin and learns nothing.\n&quot;</span>)
+
+<span class="hljs-comment"># Bonus: what if Eve measures the qubit? Then Bob&#x27;s second bit becomes a coin flip.</span>
+<span class="hljs-keyword">from</span> qiskit_aer <span class="hljs-keyword">import</span> AerSimulator
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> ClassicalRegister
+
+spied = encode(<span class="hljs-string">&quot;01&quot;</span>)
+eve = ClassicalRegister(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;eve&quot;</span>)
+spied.add_register(eve)
+spied.measure(<span class="hljs-number">0</span>, eve[<span class="hljs-number">0</span>])            <span class="hljs-comment"># Eve measures q0 in the middle of the trip</span>
+spied.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+spied.h(<span class="hljs-number">0</span>)
+spied.measure_all()
+sim = AerSimulator(seed_simulator=<span class="hljs-number">3</span>)
+counts = sim.run(transpile(spied, sim), shots=<span class="hljs-number">1000</span>).result().get_counts()
+bob = {}
+<span class="hljs-keyword">for</span> key, n <span class="hljs-keyword">in</span> counts.items():
+    bob_bits = key.split()[<span class="hljs-number">0</span>]       <span class="hljs-comment"># registers print right to left: &quot;meas eve&quot;</span>
+    bob[bob_bits] = bob.get(bob_bits, <span class="hljs-number">0</span>) + n
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Alice sent 01 with Eve listening; Bob reads:&quot;</span>, bob)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">00 Eve's qubit: [[0.5, 0.0], [0.0, 0.5]]
+01 Eve's qubit: [[0.5, 0.0], [0.0, 0.5]]
+10 Eve's qubit: [[0.5, 0.0], [0.0, 0.5]]
+11 Eve's qubit: [[0.5, 0.0], [0.0, 0.5]]
+The same matrix I/2 for every message: Eve sees a fair coin and learns nothing.
+
+Alice sent 01 with Eve listening; Bob reads: {'00': 483, '01': 517}</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="2" data-lesson="qc-w5d2" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Alice wants to send 10 (as Qiskit prints it). What does she apply to her qubit?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That sends 00."><span class="key">A</span><span>Nothing</span></button><button type="button" class="opt" data-i="1" data-why="That sends 01."><span class="key">B</span><span>Z</span></button><button type="button" class="opt" data-i="2" data-why="The left bit decides X, the right bit decides Z."><span class="key">C</span><span>X</span></button><button type="button" class="opt" data-i="3" data-why="That sends 11."><span class="key">D</span><span>X, then Z</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qc-w5d2" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">Why can Bob always decode the message correctly?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="There's no guessing: the result is certain."><span class="key">A</span><span>He guesses well</span></button><button type="button" class="opt" data-i="1" data-why="Orthogonal states can be distinguished with certainty."><span class="key">B</span><span>The four possible pair states are orthogonal, and his CNOT and H turn them into the four basis states</span></button><button type="button" class="opt" data-i="2" data-why="No phone call: only the qubit travels."><span class="key">C</span><span>Alice also phones him</span></button><button type="button" class="opt" data-i="3" data-why="Alone it carries at most one; the pre-shared half carries the rest."><span class="key">D</span><span>The qubit carries two bits by itself</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qc-w5d2" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Teleportation and superdense coding both use a shared Bell pair. Which sentence is right?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Superdense coding sends classical bits."><span class="key">A</span><span>Both send qubits</span></button><button type="button" class="opt" data-i="1" data-why="Mirror images of each other."><span class="key">B</span><span>Teleportation: 2 bits sent carry 1 qubit. Superdense coding: 1 qubit sent carries 2 bits</span></button><button type="button" class="opt" data-i="2" data-why="Neither is: something must physically travel."><span class="key">C</span><span>Both are faster than light</span></button><button type="button" class="opt" data-i="3" data-why="Without the Bell pair, one qubit carries only one bit."><span class="key">D</span><span>Superdense coding needs no entanglement</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">With a shared Bell pair, Alice encodes two bits by applying I, X, Z or ZX to her half, sends that one qubit, and Bob reads both bits with a CNOT and an H; the traveling qubit alone reveals nothing.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Bob's decoder is a <b>Bell measurement</b>: it asks "which of four orthogonal states is this?", a four-class classification with zero error. Quantum classifiers face the same question with states that are <em>not</em> orthogonal, where some error is unavoidable. How small it can be is the subject of week 6 (fidelity and the Helstrom bound) and of the Quantum ML tutorial's last week.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Nielsen and Chuang, section 2.3 ("Application: superdense coding"). The protocol was proposed by Bennett and Wiesner in 1992, a year before teleportation.</p>
+</div></div>
+<p class="muted mb0">Next in Quantum Computing: phase kickback, and the first algorithm that beats every classical one.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qc-w5d2">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qc btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qc/w5d3.html"><img src="../assets/icons/kickback.svg" alt=""><span><small>Next in Quantum Computing</small><span class="t">Phase kickback and Deutsch–Jozsa</span></span></a><div class="also-today" data-date="2026-11-17" data-track="qc"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qc/w5d1.html">← Teleportation</a><a href="../qc/w5d3.html">Deutsch–Jozsa →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

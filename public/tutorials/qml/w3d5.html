@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: a quantum classifier versus a tiny network · Quantum Machine Learning · Quantum Path</title>
+<meta name="description" content="This week's best quantum classifier against a classical network of the same size: same data, same splits, same loss, one look at the test set, and an honest look at the bills.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qml-w3d5.js?v=mva52clc"></script>
+</head>
+<body class="track-qml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html" aria-current="page"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qml/index.html">Quantum Machine Learning</a><span class="muted">›</span><a href="../qml/index.html#week-3">Week 3 · Variational quantum classifiers</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qml"><img src="../assets/icons/duel.svg" alt=""></div>
+    <div>
+      <span class="chip qml"><span class="dot"></span>Quantum Machine Learning</span>
+      <h1>Project: a quantum classifier versus a tiny network</h1>
+      <p class="subtitle">This week's best quantum classifier against a classical network of the same size: same data, same splits, same loss, one look at the test set, and an honest look at the bills.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 15 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qml-w3d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Run a fair duel between a variational quantum classifier and a small neural network</span></li><li><span>Compare accuracy with its spread, and cost in circuit runs, shots and multiply-adds</span></li><li><span>Read the decision boundaries for what each model's structure makes easy</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#project"><span class="num">5</span>Project</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 15 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>The question every paper must answer</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">From Monday to Thursday you built a quantum classifier piece by piece: readout, loss, hybrid training, re-uploading. Now comes the question every QML paper has to answer: is it any better than a classical model of the same size? Week 2 asked it about kernels. Today you ask it about circuits that learn.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>The rules of the duel</h2></div><span class="mins">3 min</span></div><div class="card">
+<ol class="task-list">
+<li><b>The contestants.</b> Quantum: 2 qubits, 3 uploads, 12 circuit weights plus the scale <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> and shift <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> (14 numbers). Classical: a network with 2 inputs, 3 tanh units and 1 output (13 weights). Equal sizes keep the comparison about the models' structure, not their budgets.</li>
+<li><b>The same training.</b> Cross-entropy and Adam for both, each run until its loss settles: 60 epochs for the circuit, 300 steps for the network.</li>
+<li><b>The same protocol as week 2.</b> Moons, circles and XOR, three random splits each, 80 training and 40 test points, scaling fitted on the training part, and one look at the test set.</li>
+</ol>
+<p><b>The bills.</b> Each quantum epoch costs <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>+</mo><mn>2</mn><mo>×</mo><mn>12</mn><mo>=</mo><mn>25</mn></mrow><annotation encoding="application/x-tex">1 + 2 \times 12 = 25</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">12</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">25</span></span></span></span> circuit runs per point, so one training takes <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>80</mn><mo>×</mo><mn>25</mn><mo>×</mo><mn>60</mn><mo>=</mo><mn>120,000</mn></mrow><annotation encoding="application/x-tex">80 \times 25 \times 60 = 120{,}000</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">80</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">25</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">60</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">120</span><span class="mord"><span class="mpunct">,</span></span><span class="mord">000</span></span></span></span> runs: 120 million shots on hardware at 1,000 shots per run. The network needs about 27 multiply-adds per point and step, some 650,000 in all, which a laptop does in about a millisecond.</p>
+<p class="big-idea">Same data, splits, loss and optimizer; compare accuracies together with their spread, and keep the bills in view: 120,000 circuit runs against a millisecond of arithmetic.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Watch the race</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Both models train side by side on the same 80 points. The rings are the 40 test points, scored once when the race ends.</p>
+<div data-widget="duel"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Race on each dataset, then press <b>New split</b> and race again. Does the same model win every time? Then compare the shapes: the network draws a few smooth bends, while the quantum classifier's boundary is built from waves, and it often keeps bending in the corners, far from any data.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The duel in code</h2></div><span class="mins">3 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qml-w3d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qml/qml-w3d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qml/qml-w3d5.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · three datasets, one protocol</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> time
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">from</span> torch <span class="hljs-keyword">import</span> nn
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit
+<span class="hljs-keyword">from</span> qiskit.circuit <span class="hljs-keyword">import</span> ParameterVector
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> SparsePauliOp
+<span class="hljs-keyword">from</span> qiskit_aer.primitives <span class="hljs-keyword">import</span> EstimatorV2 <span class="hljs-keyword">as</span> AerEstimator
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons, make_circles
+<span class="hljs-keyword">from</span> sklearn.preprocessing <span class="hljs-keyword">import</span> MinMaxScaler
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+estimator = AerEstimator(options={<span class="hljs-string">&quot;backend_options&quot;</span>: {<span class="hljs-string">&quot;max_parallel_threads&quot;</span>: <span class="hljs-number">1</span>}})   <span class="hljs-comment"># exact ⟨Z⟩, faster than the reference one</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">dataset</span>(<span class="hljs-params">kind, seed</span>):
+    <span class="hljs-string">&quot;&quot;&quot;120 points, 80 for training and 40 for the test, features scaled to [-π/2, π/2] using the training part only.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">if</span> kind == <span class="hljs-string">&quot;moons&quot;</span>:
+        X, y = make_moons(<span class="hljs-number">120</span>, noise=<span class="hljs-number">0.15</span>, random_state=seed)
+    <span class="hljs-keyword">elif</span> kind == <span class="hljs-string">&quot;circles&quot;</span>:
+        X, y = make_circles(<span class="hljs-number">120</span>, noise=<span class="hljs-number">0.08</span>, factor=<span class="hljs-number">0.5</span>, random_state=seed)
+    <span class="hljs-keyword">else</span>:
+        rng = np.random.default_rng(seed)
+        corner = rng.choice([-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>], size=(<span class="hljs-number">120</span>, <span class="hljs-number">2</span>))
+        X, y = corner + <span class="hljs-number">0.4</span> * rng.normal(size=(<span class="hljs-number">120</span>, <span class="hljs-number">2</span>)), (corner[:, <span class="hljs-number">0</span>] * corner[:, <span class="hljs-number">1</span>] &lt; <span class="hljs-number">0</span>).astype(<span class="hljs-built_in">int</span>)
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">40</span>, random_state=seed, stratify=y)
+    scaler = MinMaxScaler((-np.pi / <span class="hljs-number">2</span>, np.pi / <span class="hljs-number">2</span>)).fit(X_tr)
+    <span class="hljs-keyword">return</span> scaler.transform(X_tr), scaler.transform(X_te), y_tr, y_te
+
+<span class="hljs-built_in">print</span>({kind: [a.shape <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> dataset(kind, <span class="hljs-number">0</span>)[:<span class="hljs-number">2</span>]] <span class="hljs-keyword">for</span> kind <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;moons&quot;</span>, <span class="hljs-string">&quot;circles&quot;</span>, <span class="hljs-string">&quot;xor&quot;</span>)})</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">{'moons': [(80, 2), (40, 2)], 'circles': [(80, 2), (40, 2)], 'xor': [(80, 2), (40, 2)]}</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the quantum contestant</span><button type="button" class="btn-copy">Copy</button></div><pre><code>x, w = ParameterVector(<span class="hljs-string">&quot;x&quot;</span>, <span class="hljs-number">2</span>), ParameterVector(<span class="hljs-string">&quot;w&quot;</span>, <span class="hljs-number">12</span>)
+circuit = QuantumCircuit(<span class="hljs-number">2</span>)
+<span class="hljs-keyword">for</span> l <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">3</span>):
+    circuit.ry(x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+    circuit.ry(x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)
+    circuit.ry(w[<span class="hljs-number">4</span> * l], <span class="hljs-number">0</span>)
+    circuit.rz(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">1</span>], <span class="hljs-number">0</span>)
+    circuit.ry(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">2</span>], <span class="hljs-number">1</span>)
+    circuit.rz(w[<span class="hljs-number">4</span> * l + <span class="hljs-number">3</span>], <span class="hljs-number">1</span>)
+    circuit.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)
+Z1 = SparsePauliOp(<span class="hljs-string">&quot;ZI&quot;</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">scores</span>(<span class="hljs-params">X, weight_sets</span>):
+    rows = np.array([np.concatenate([W, p]) <span class="hljs-keyword">for</span> W <span class="hljs-keyword">in</span> weight_sets <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> X])
+    <span class="hljs-keyword">return</span> estimator.run([(circuit, Z1, rows)]).result()[<span class="hljs-number">0</span>].data.evs.reshape(<span class="hljs-built_in">len</span>(weight_sets), <span class="hljs-built_in">len</span>(X))
+
+sigmoid = <span class="hljs-keyword">lambda</span> z: <span class="hljs-number">1</span> / (<span class="hljs-number">1</span> + np.exp(-z))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">train_quantum</span>(<span class="hljs-params">X, y, epochs=<span class="hljs-number">60</span>, lr=<span class="hljs-number">0.1</span>, seed=<span class="hljs-number">0</span></span>):
+    theta = np.r_[<span class="hljs-number">0.6</span> * np.random.default_rng(seed).normal(size=<span class="hljs-number">12</span>), <span class="hljs-number">2.0</span>, <span class="hljs-number">0.0</span>]   <span class="hljs-comment"># 12 circuit weights, then a and b</span>
+    m, v, runs = np.zeros(<span class="hljs-number">14</span>), np.zeros(<span class="hljs-number">14</span>), <span class="hljs-number">0</span>
+    shifts = [s * np.eye(<span class="hljs-number">12</span>)[j] <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">12</span>) <span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> (np.pi / <span class="hljs-number">2</span>, -np.pi / <span class="hljs-number">2</span>)]
+    <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, epochs + <span class="hljs-number">1</span>):
+        W, a, b = theta[:<span class="hljs-number">12</span>], theta[<span class="hljs-number">12</span>], theta[<span class="hljs-number">13</span>]
+        S = scores(X, [W] + [W + d <span class="hljs-keyword">for</span> d <span class="hljs-keyword">in</span> shifts])
+        runs += S.size
+        f, df = S[<span class="hljs-number">0</span>], (S[<span class="hljs-number">1</span>::<span class="hljs-number">2</span>] - S[<span class="hljs-number">2</span>::<span class="hljs-number">2</span>]) / <span class="hljs-number">2</span>
+        dz = (sigmoid(-a * f + b) - y) / <span class="hljs-built_in">len</span>(y)                    <span class="hljs-comment"># cross-entropy through the sigmoid</span>
+        g = np.r_[df @ (-a * dz), np.<span class="hljs-built_in">sum</span>(-f * dz), np.<span class="hljs-built_in">sum</span>(dz)]
+        m, v = <span class="hljs-number">0.9</span> * m + <span class="hljs-number">0.1</span> * g, <span class="hljs-number">0.999</span> * v + <span class="hljs-number">0.001</span> * g ** <span class="hljs-number">2</span>
+        theta = theta - lr * (m / (<span class="hljs-number">1</span> - <span class="hljs-number">0.9</span> ** k)) / (np.sqrt(v / (<span class="hljs-number">1</span> - <span class="hljs-number">0.999</span> ** k)) + <span class="hljs-number">1e-8</span>)
+    predict = <span class="hljs-keyword">lambda</span> X_: (sigmoid(-theta[<span class="hljs-number">12</span>] * scores(X_, [theta[:<span class="hljs-number">12</span>]])[<span class="hljs-number">0</span>] + theta[<span class="hljs-number">13</span>]) &gt; <span class="hljs-number">0.5</span>).astype(<span class="hljs-built_in">int</span>)
+    <span class="hljs-keyword">return</span> predict, runs</code></pre></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · the classical contestant</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">train_network</span>(<span class="hljs-params">X, y, hidden=<span class="hljs-number">3</span>, steps=<span class="hljs-number">300</span>, lr=<span class="hljs-number">0.05</span>, seed=<span class="hljs-number">0</span></span>):
+    torch.manual_seed(seed)
+    net = nn.Sequential(nn.Linear(<span class="hljs-number">2</span>, hidden), nn.Tanh(), nn.Linear(hidden, <span class="hljs-number">1</span>))
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    Xt, yt = torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)
+    <span class="hljs-keyword">for</span> step <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(steps):
+        optimizer.zero_grad()
+        nn.functional.binary_cross_entropy_with_logits(net(Xt).squeeze(<span class="hljs-number">1</span>), yt).backward()
+        optimizer.step()
+    <span class="hljs-keyword">def</span> <span class="hljs-title function_">predict</span>(<span class="hljs-params">X_</span>):
+        <span class="hljs-keyword">with</span> torch.no_grad():
+            <span class="hljs-keyword">return</span> (net(torch.tensor(X_, dtype=torch.float32)).squeeze(<span class="hljs-number">1</span>) &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">int</span>().numpy()
+    <span class="hljs-keyword">return</span> predict, <span class="hljs-built_in">sum</span>(p.numel() <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> net.parameters())
+
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;network weights:&quot;</span>, train_network(*dataset(<span class="hljs-string">&quot;moons&quot;</span>, <span class="hljs-number">0</span>)[::<span class="hljs-number">2</span>], steps=<span class="hljs-number">1</span>)[<span class="hljs-number">1</span>])</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">network weights: 13</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · 3 datasets × 3 splits</span><button type="button" class="btn-copy">Copy</button></div><pre><code>table = {}
+<span class="hljs-keyword">for</span> kind <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;moons&quot;</span>, <span class="hljs-string">&quot;circles&quot;</span>, <span class="hljs-string">&quot;xor&quot;</span>):
+    q_acc, c_acc, q_time, c_time = [], [], <span class="hljs-number">0.0</span>, <span class="hljs-number">0.0</span>
+    <span class="hljs-keyword">for</span> seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">3</span>):
+        X_tr, X_te, y_tr, y_te = dataset(kind, seed)
+        t0 = time.time()
+        predict_q, runs = train_quantum(X_tr, y_tr, seed=seed)
+        q_time += time.time() - t0
+        t0 = time.time()
+        predict_c, _ = train_network(X_tr, y_tr, seed=seed)
+        c_time += time.time() - t0
+        q_acc.append(np.mean(predict_q(X_te) == y_te))
+        c_acc.append(np.mean(predict_c(X_te) == y_te))
+    table[kind] = (q_acc, c_acc)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{kind:8s}</span> quantum <span class="hljs-subst">{np.mean(q_acc):<span class="hljs-number">.3</span>f}</span> ± <span class="hljs-subst">{np.std(q_acc):<span class="hljs-number">.3</span>f}</span> (<span class="hljs-subst">{q_time / <span class="hljs-number">3</span>:<span class="hljs-number">4.1</span>f}</span> s per run)   &quot;</span>
+          <span class="hljs-string">f&quot;network <span class="hljs-subst">{np.mean(c_acc):<span class="hljs-number">.3</span>f}</span> ± <span class="hljs-subst">{np.std(c_acc):<span class="hljs-number">.3</span>f}</span> (<span class="hljs-subst">{c_time / <span class="hljs-number">3</span>:<span class="hljs-number">.2</span>f}</span> s per run)&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;circuit runs per quantum training: <span class="hljs-subst">{runs:,}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">moons    quantum 0.958 ± 0.012 (14.4 s per run)   network 0.975 ± 0.020 (0.09 s per run)
+circles  quantum 0.942 ± 0.042 (15.0 s per run)   network 0.942 ± 0.024 (0.10 s per run)
+xor      quantum 0.958 ± 0.024 (15.1 s per run)   network 0.942 ± 0.031 (0.09 s per run)
+circuit runs per quantum training: 120,000</pre></div></details></div>
+<p>Cell 2 uses Qiskit Aer's estimator: the same exact <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">⟨</mo><mi>Z</mi><mo stretchy="false">⟩</mo></mrow><annotation encoding="application/x-tex">\langle Z\rangle</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">⟨</span><span class="mord mathnormal" style="margin-right:0.07153em;">Z</span><span class="mclose">⟩</span></span></span></span> values, about four times faster. In the table, the network leads on the moons, they tie on the circles, and the quantum classifier leads on XOR, and every gap is smaller than the spread. The clear difference is in the time column: about 15 seconds per quantum training on a simulator, a tenth of a second for the network.</p>
+</div></section>
+
+<section class="step reveal" id="project"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-star.svg" alt=""></span><div><span class="label">Project</span><h2>Project: boundaries, bills and three sentences</h2></div><span class="mins">3 min</span></div><div class="card">
+<ol class="task-list">
+<li>Read the table: where does each contestant win, and is any gap bigger than the spread?</li>
+<li>Draw both decision boundaries for one split of the moons, side by side.</li>
+<li>Count the bill: how many circuit runs did one quantum training take, and how many shots would that be at 1,000 per run?</li>
+<li>Write three honest sentences.</li>
+</ol>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">project · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+
+X_tr, X_te, y_tr, y_te = dataset(<span class="hljs-string">&quot;moons&quot;</span>, <span class="hljs-number">0</span>)
+<span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> train both contestants on this split, draw their boundaries on a grid (two panels),</span>
+<span class="hljs-comment">#       and print the quantum bill: circuit runs, and shots at 1,000 per run</span></code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>train_quantum</code> and <code>train_network</code> return a <code>predict</code> function. Call it on the points of a grid, <code>np.c_[gx.ravel(), gy.ravel()]</code>, and draw the result with <code>contourf</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> matplotlib.colors <span class="hljs-keyword">import</span> ListedColormap
+
+X_tr, X_te, y_tr, y_te = dataset(<span class="hljs-string">&quot;moons&quot;</span>, <span class="hljs-number">0</span>)
+predict_q, runs = train_quantum(X_tr, y_tr)
+predict_c, n_weights = train_network(X_tr, y_tr)
+g = np.linspace(-<span class="hljs-number">2.0</span>, <span class="hljs-number">2.0</span>, <span class="hljs-number">61</span>)
+gx, gy = np.meshgrid(g, g)
+grid = np.c_[gx.ravel(), gy.ravel()]
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">9</span>, <span class="hljs-number">4.2</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, (name, predict) <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [(<span class="hljs-string">&quot;quantum classifier: 14 weights&quot;</span>, predict_q), (<span class="hljs-string">f&quot;tiny network: <span class="hljs-subst">{n_weights}</span> weights&quot;</span>, predict_c)]):
+    ax.contourf(gx, gy, predict(grid).reshape(gx.shape), levels=[-<span class="hljs-number">0.5</span>, <span class="hljs-number">0.5</span>, <span class="hljs-number">1.5</span>], cmap=ListedColormap([<span class="hljs-string">&quot;#ffe1d2&quot;</span>, <span class="hljs-string">&quot;#d9e1ff&quot;</span>]))
+    ax.scatter(X_tr[:, <span class="hljs-number">0</span>], X_tr[:, <span class="hljs-number">1</span>], c=np.where(y_tr == <span class="hljs-number">0</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>), s=<span class="hljs-number">18</span>, edgecolors=<span class="hljs-string">&quot;white&quot;</span>, linewidths=<span class="hljs-number">0.5</span>)
+    ax.scatter(X_te[:, <span class="hljs-number">0</span>], X_te[:, <span class="hljs-number">1</span>], facecolors=<span class="hljs-string">&quot;white&quot;</span>, edgecolors=np.where(y_te == <span class="hljs-number">0</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>), s=<span class="hljs-number">26</span>, linewidths=<span class="hljs-number">1.6</span>)
+    ax.set_title(<span class="hljs-string">f&quot;<span class="hljs-subst">{name}</span>, test <span class="hljs-subst">{np.mean(predict(X_te) == y_te):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+    ax.set_aspect(<span class="hljs-string">&quot;equal&quot;</span>)
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quantum bill: <span class="hljs-subst">{runs:,}</span> circuit runs = <span class="hljs-subst">{runs * <span class="hljs-number">1000</span>:,}</span> shots at 1,000 shots per run&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;network bill: about <span class="hljs-subst">{<span class="hljs-number">3</span> * <span class="hljs-number">9</span> * <span class="hljs-number">80</span> * <span class="hljs-number">300</span>:,}</span> multiply-adds (forward and backward, 300 steps)&quot;</span>)
+<span class="hljs-built_in">print</span>()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;1. On these three small datasets the quantum classifier and a 13-weight network tie within the spread.&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;2. The network trains in a fraction of a second on a laptop; the quantum model needs 120,000 circuit runs,&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;   about 120 million shots on hardware, before counting noise.&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;3. A tie on toy data says nothing about harder data either way; it does say that &#x27;it works&#x27; is not evidence of an advantage.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/qml-w3d5-sol-1fad5948.png" width="961" height="474" alt="Figure produced by this code" loading="lazy"><pre class="text">quantum bill: 120,000 circuit runs = 120,000,000 shots at 1,000 shots per run
+network bill: about 648,000 multiply-adds (forward and backward, 300 steps)
+
+1. On these three small datasets the quantum classifier and a 13-weight network tie within the spread.
+2. The network trains in a fraction of a second on a laptop; the quantum model needs 120,000 circuit runs,
+   about 120 million shots on hardware, before counting noise.
+3. A tie on toy data says nothing about harder data either way; it does say that 'it works' is not evidence of an advantage.</pre></div></details></div></details>
+<p><b>Reading the boundaries.</b> The network's boundary is a smooth V: a few tanh bends. The quantum classifier's boundary is a sum of waves, Thursday's Fourier series, and it keeps curling in the corners, where there is no data to hold it still. Neither shape is wrong on these points, but they generalize differently, and that matters more than a single accuracy number.</p>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qml-w3d5" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">On XOR, the quantum classifier scores 0.958 ± 0.024 and the network 0.942 ± 0.031. What do you report?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The gap, 1.6 points, is smaller than either spread."><span class="key">A</span><span>The quantum classifier wins on XOR</span></button><button type="button" class="opt" data-i="1" data-why="Three splits can't separate them."><span class="key">B</span><span>A tie within the spread</span></button><button type="button" class="opt" data-i="2" data-why="It scored lower here, but within the spread."><span class="key">C</span><span>The network wins</span></button><button type="button" class="opt" data-i="3" data-why="Easy data still counts; it just can't show a difference."><span class="key">D</span><span>Nothing, XOR is too easy to count</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="2" data-lesson="qml-w3d5" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">One quantum training takes 120,000 circuit runs. How many shots is that at 1,000 shots per run?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's the number of runs, not shots."><span class="key">A</span><span>120,000</span></button><button type="button" class="opt" data-i="1" data-why="That's 10 shots per run."><span class="key">B</span><span>1.2 million</span></button><button type="button" class="opt" data-i="2" data-why="&lt;span class=&quot;katex&quot;&gt;&lt;span class=&quot;katex-mathml&quot;&gt;&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;semantics&gt;&lt;mrow&gt;&lt;mn&gt;120,000&lt;/mn&gt;&lt;mo&gt;×&lt;/mo&gt;&lt;mn&gt;1,000&lt;/mn&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mn&gt;120&lt;/mn&gt;&lt;/mrow&gt;&lt;annotation encoding=&quot;application/x-tex&quot;&gt;120{,}000 \times 1{,}000 = 120&lt;/annotation&gt;&lt;/semantics&gt;&lt;/math&gt;&lt;/span&gt;&lt;span class=&quot;katex-html&quot; aria-hidden=&quot;true&quot;&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8389em;vertical-align:-0.1944em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;120&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mpunct&quot;&gt;,&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;000&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mbin&quot;&gt;×&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2222em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.8389em;vertical-align:-0.1944em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;&lt;span class=&quot;mpunct&quot;&gt;,&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;000&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mrel&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mspace&quot; style=&quot;margin-right:0.2778em;&quot;&gt;&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;base&quot;&gt;&lt;span class=&quot;strut&quot; style=&quot;height:0.6444em;&quot;&gt;&lt;/span&gt;&lt;span class=&quot;mord&quot;&gt;120&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/span&gt; million."><span class="key">C</span><span>120 million</span></button><button type="button" class="opt" data-i="3" data-why="That would be 100,000 shots per run."><span class="key">D</span><span>12 billion</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qml-w3d5" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Why give the network about as many weights as the quantum classifier?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="A real baseline could be much bigger at almost no cost."><span class="key">A</span><span>Networks only need a few weights</span></button><button type="button" class="opt" data-i="1" data-why="Equal sizes isolate what the structure does."><span class="key">B</span><span>So the comparison is about the models' structure, not their size</span></button><button type="button" class="opt" data-i="2" data-why="PyTorch has no such rule."><span class="key">C</span><span>PyTorch requires it</span></button><button type="button" class="opt" data-i="3" data-why="It ties anyway; a bigger one would only do better."><span class="key">D</span><span>To make the network lose</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>This week in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">A variational quantum classifier encodes, processes and measures, turns counts into probabilities, trains like any PyTorch layer, and gets its expressiveness from re-uploading; on small classical datasets it ties a network of the same size, at a far higher price.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Research link</span>
+<p class="mb0">Bowles, Ahmed and Schuld (2024) reached the same verdict at scale: out-of-the-box classical models, small networks included, matched or beat the quantum classifiers they tested. Next week asks what quantum models would need to be worth their bill: surviving noise, staying trainable, and data with quantum structure.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Bowles, Ahmed and Schuld, "Better than classical? The subtle art of benchmarking quantum machine learning models" (2024), the parts on variational classifiers. On why simulators can train circuits by backpropagation while hardware needs parameter shifts: the PennyLane demo "Quantum gradients with backpropagation".</p>
+</div></div>
+<p class="muted mb0">That's week 3 of Quantum ML! Saturday: optional flashback. Next week: QML for research, from noise and trainability to quantum data and your own mini-study.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qml-w3d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qml/w4d1.html"><img src="../assets/icons/noisyqml.svg" alt=""><span><small>Next in Quantum Machine Learning</small><span class="t">Noise in quantum machine learning</span></span></a><div class="also-today" data-date="2027-01-22" data-track="qml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../qml/w3d4.html">← Re-uploading</a><a href="../qml/w4d1.html">Noisy QML →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

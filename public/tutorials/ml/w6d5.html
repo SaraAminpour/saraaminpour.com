@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Semi-supervised learning · Machine Learning · Quantum Path</title>
+<meta name="description" content="A handful of labels and a mountain of unlabeled data. The unlabeled points show the shape; the few labels name the parts.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/ml-w6d5.js?v=mva52clc"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-6">Week 6 · Learning without labels</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/semi.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Semi-supervised learning</h1>
+      <p class="subtitle">A handful of labels and a mountain of unlabeled data. The unlabeled points show the shape; the few labels name the parts.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 12 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w6d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Explain when semi-supervised learning helps, and the assumptions behind it</span></li><li><span>Watch label spreading carry a few labels across a similarity graph</span></li><li><span>Recognise the trap of self-training: confirmation bias</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 12 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Five graded essays</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">A teacher grades only five of a hundred essays and asks you to grade the rest. You'd read the ungraded ones too, notice which ones resemble which graded essay, and grade by resemblance. You'd be using the <em>unlabeled</em> essays to understand the space of essays. That is semi-supervised learning.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Let the shape of the data help</h2></div><span class="mins">4 min</span></div><div class="card">
+<p>Labels are often expensive: a doctor must read each scan, an expert must check each crystal structure, a physicist must run a reference experiment. Unlabeled data is often cheap. <b>Semi-supervised learning</b> uses both.</p>
+<p>It works when two (reasonable) assumptions hold:</p>
+<ul>
+<li><b>Smoothness</b>: points that are close together, connected through dense regions, tend to share a label.</li>
+<li><b>Cluster (low-density) assumption</b>: the decision boundary should run through the empty gaps, not through crowds of points.</li>
+</ul>
+<p>Two classic methods:</p>
+<div class="compare">
+  <div><h4>Label spreading</h4><p>Connect each point to its nearest neighbors to make a <b>graph</b>, then let the known labels flow along the edges, like ink in wet paper, until every point has a color. Labels travel easily inside a dense cluster and barely across a gap.</p></div>
+  <div><h4>Self-training</h4><p>Train on the labeled points, add the predictions the model is most sure of as <b>pseudo-labels</b>, retrain, repeat. Simple, but if the first model is wrong, it teaches itself its own mistakes (<b>confirmation bias</b>).</p></div>
+</div>
+<p>When the assumptions fail (classes that overlap completely, say), unlabeled data can't help and may even hurt. As always: check on validation data.</p>
+<p class="big-idea">The unlabeled points show the shape of the data; a few labels name its parts. It works when the classes are dense regions separated by gaps.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Be the teacher</h2></div><span class="mins">5 min</span></div><div class="card">
+<p>Grey points are unlabeled. Two points start with labels. Press <b>Spread</b> and watch the labels flow through the graph. Then <b>click any point</b> to label it yourself (click again to change or remove its label) and spread again.</p>
+<div data-widget="semi"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Compare the two modes: <b>supervised only</b> draws a straight cut between the labeled points and gets the tips of the moons wrong; <b>label spreading</b> follows each moon. Then raise the neighbor count <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> to 25 so the graph jumps across the gap. Labels leak into the wrong moon: the graph decides everything.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Semi-supervised in scikit-learn</h2></div><span class="mins">3 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w6d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w6d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w6d5.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · 4 labels out of 300</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons
+
+X, y = make_moons(n_samples=<span class="hljs-number">300</span>, noise=<span class="hljs-number">0.08</span>, random_state=<span class="hljs-number">0</span>)
+rng = np.random.default_rng(<span class="hljs-number">4</span>)
+labeled = np.concatenate([rng.choice(np.where(y == c)[<span class="hljs-number">0</span>], <span class="hljs-number">2</span>, replace=<span class="hljs-literal">False</span>) <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>]])
+
+y_partial = np.full_like(y, -<span class="hljs-number">1</span>)          <span class="hljs-comment"># scikit-learn&#x27;s convention: -1 means &quot;no label&quot;</span>
+y_partial[labeled] = y[labeled]
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;labeled points:&quot;</span>, <span class="hljs-built_in">len</span>(labeled), <span class="hljs-string">&quot;of&quot;</span>, <span class="hljs-built_in">len</span>(X))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">labeled points: 4 of 300</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · supervised only</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.svm <span class="hljs-keyword">import</span> SVC
+
+supervised = SVC(kernel=<span class="hljs-string">&quot;rbf&quot;</span>, gamma=<span class="hljs-number">1.0</span>).fit(X[labeled], y[labeled])
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;accuracy on all 300 points:&quot;</span>, <span class="hljs-built_in">round</span>(supervised.score(X, y), <span class="hljs-number">3</span>))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">accuracy on all 300 points: 0.833</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · label spreading</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.semi_supervised <span class="hljs-keyword">import</span> LabelSpreading
+
+<span class="hljs-comment"># alpha = how much each point listens to its neighbors (0.9 lets labels travel far along the moon)</span>
+spreading = LabelSpreading(kernel=<span class="hljs-string">&quot;knn&quot;</span>, n_neighbors=<span class="hljs-number">7</span>, alpha=<span class="hljs-number">0.9</span>, max_iter=<span class="hljs-number">1000</span>).fit(X, y_partial)
+guessed = spreading.transduction_                <span class="hljs-comment"># the label it settled on for every point</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;accuracy on all 300 points:&quot;</span>, <span class="hljs-built_in">round</span>((guessed == y).mean(), <span class="hljs-number">3</span>))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">accuracy on all 300 points: 0.993</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · side by side</span><button type="button" class="btn-copy">Copy</button></div><pre><code>colors = np.array([<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>])
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">10</span>, <span class="hljs-number">3.6</span>), sharey=<span class="hljs-literal">True</span>, layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+xx, yy = np.meshgrid(np.linspace(-<span class="hljs-number">1.4</span>, <span class="hljs-number">2.4</span>, <span class="hljs-number">200</span>), np.linspace(-<span class="hljs-number">0.9</span>, <span class="hljs-number">1.4</span>, <span class="hljs-number">150</span>))
+axes[<span class="hljs-number">0</span>].contourf(xx, yy, supervised.predict(np.c_[xx.ravel(), yy.ravel()]).reshape(xx.shape), levels=[-<span class="hljs-number">0.5</span>, <span class="hljs-number">0.5</span>, <span class="hljs-number">1.5</span>], colors=[<span class="hljs-string">&quot;#ffe3d6&quot;</span>, <span class="hljs-string">&quot;#dfe6ff&quot;</span>])
+axes[<span class="hljs-number">0</span>].scatter(X[:, <span class="hljs-number">0</span>], X[:, <span class="hljs-number">1</span>], c=<span class="hljs-string">&quot;#cfcadb&quot;</span>, s=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">0</span>].set_title(<span class="hljs-string">&quot;Supervised, 4 labels only&quot;</span>)
+axes[<span class="hljs-number">1</span>].scatter(X[:, <span class="hljs-number">0</span>], X[:, <span class="hljs-number">1</span>], c=colors[guessed], s=<span class="hljs-number">10</span>)
+axes[<span class="hljs-number">1</span>].set_title(<span class="hljs-string">&quot;Label spreading, 4 labels + 296 unlabeled&quot;</span>)
+<span class="hljs-keyword">for</span> ax <span class="hljs-keyword">in</span> axes:
+    ax.scatter(X[labeled, <span class="hljs-number">0</span>], X[labeled, <span class="hljs-number">1</span>], c=colors[y[labeled]], marker=<span class="hljs-string">&quot;*&quot;</span>, s=<span class="hljs-number">380</span>, edgecolors=<span class="hljs-string">&quot;#2c2842&quot;</span>, linewidths=<span class="hljs-number">1.2</span>, zorder=<span class="hljs-number">3</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w6d5-plot-fc5ddfe2.png" width="1112" height="408" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 5 · self-training, and its trap</span><button type="button" class="btn-copy">Copy</button></div><pre><code>X_lab, y_lab = X[labeled], y[labeled]
+pool = np.setdiff1d(np.arange(<span class="hljs-built_in">len</span>(X)), labeled)
+<span class="hljs-keyword">for</span> round_number <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">6</span>):
+    model = SVC(kernel=<span class="hljs-string">&quot;rbf&quot;</span>, gamma=<span class="hljs-number">1.0</span>).fit(X_lab, y_lab)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;round <span class="hljs-subst">{round_number}</span>: trained on <span class="hljs-subst">{<span class="hljs-built_in">len</span>(y_lab):3d}</span> labels -&gt; accuracy on all points <span class="hljs-subst">{model.score(X, y):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+    scores = model.decision_function(X[pool])
+    confident = pool[np.argsort(-np.<span class="hljs-built_in">abs</span>(scores))[:<span class="hljs-number">40</span>]]          <span class="hljs-comment"># the 40 most confident guesses</span>
+    X_lab = np.vstack([X_lab, X[confident]])
+    y_lab = np.concatenate([y_lab, model.predict(X[confident])])   <span class="hljs-comment"># pseudo-labels, not true labels!</span>
+    pool = np.setdiff1d(pool, confident)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">round 0: trained on   4 labels -&gt; accuracy on all points 0.833
+round 1: trained on  44 labels -&gt; accuracy on all points 0.833
+round 2: trained on  84 labels -&gt; accuracy on all points 0.820
+round 3: trained on 124 labels -&gt; accuracy on all points 0.803
+round 4: trained on 164 labels -&gt; accuracy on all points 0.793
+round 5: trained on 204 labels -&gt; accuracy on all points 0.790</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: how many labels do you need?</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>For 1, 2, 5, 10 and 25 labels per class, compare a supervised SVM trained on the labeled points alone with label spreading. Average over 10 random draws of the labels. Where does the unlabeled data help most?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.semi_supervised <span class="hljs-keyword">import</span> LabelSpreading
+<span class="hljs-keyword">from</span> sklearn.svm <span class="hljs-keyword">import</span> SVC
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">accuracies</span>(<span class="hljs-params">n_per_class, seed</span>):
+    rng = np.random.default_rng(seed)
+    lab = np.concatenate([rng.choice(np.where(y == c)[<span class="hljs-number">0</span>], n_per_class, replace=<span class="hljs-literal">False</span>) <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>]])
+    partial = np.full_like(y, -<span class="hljs-number">1</span>)
+    partial[lab] = y[lab]
+    supervised_acc = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> SVC(kernel=&quot;rbf&quot;, gamma=1.0) fitted on X[lab], y[lab]; its .score(X, y)</span>
+    spreading_acc = <span class="hljs-literal">None</span>    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> LabelSpreading(kernel=&quot;knn&quot;, n_neighbors=7, alpha=0.9, max_iter=1000).fit(X, partial),</span>
+                            <span class="hljs-comment">#       then the share of transduction_ that equals y</span>
+    <span class="hljs-keyword">return</span> supervised_acc, spreading_acc
+
+<span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>, <span class="hljs-number">25</span>]:
+    <span class="hljs-built_in">print</span>(n, [accuracies(n, seed) <span class="hljs-keyword">for</span> seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">3</span>)])</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>Both models are one line each; the code of cells 2 and 3 shows them. <code>np.mean([...], axis=0)</code> averages a list of (supervised, spreading) pairs column by column.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.semi_supervised <span class="hljs-keyword">import</span> LabelSpreading
+<span class="hljs-keyword">from</span> sklearn.svm <span class="hljs-keyword">import</span> SVC
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">accuracies</span>(<span class="hljs-params">n_per_class, seed</span>):
+    rng = np.random.default_rng(seed)
+    lab = np.concatenate([rng.choice(np.where(y == c)[<span class="hljs-number">0</span>], n_per_class, replace=<span class="hljs-literal">False</span>) <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>]])
+    partial = np.full_like(y, -<span class="hljs-number">1</span>)
+    partial[lab] = y[lab]
+    supervised_acc = SVC(kernel=<span class="hljs-string">&quot;rbf&quot;</span>, gamma=<span class="hljs-number">1.0</span>).fit(X[lab], y[lab]).score(X, y)
+    spreading = LabelSpreading(kernel=<span class="hljs-string">&quot;knn&quot;</span>, n_neighbors=<span class="hljs-number">7</span>, alpha=<span class="hljs-number">0.9</span>, max_iter=<span class="hljs-number">1000</span>).fit(X, partial)
+    spreading_acc = (spreading.transduction_ == y).mean()
+    <span class="hljs-keyword">return</span> supervised_acc, spreading_acc
+
+budgets = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5</span>, <span class="hljs-number">10</span>, <span class="hljs-number">25</span>]
+means = np.array([np.mean([accuracies(n, seed) <span class="hljs-keyword">for</span> seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>)], axis=<span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> budgets])
+<span class="hljs-keyword">for</span> n, (sup, spr) <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(budgets, means):
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{n:2d}</span> labels per class: supervised only <span class="hljs-subst">{sup:<span class="hljs-number">.3</span>f}</span>, label spreading <span class="hljs-subst">{spr:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+
+plt.plot(budgets, means[:, <span class="hljs-number">0</span>], <span class="hljs-string">&quot;o-&quot;</span>, color=<span class="hljs-string">&quot;#ff8a50&quot;</span>, label=<span class="hljs-string">&quot;supervised only&quot;</span>)
+plt.plot(budgets, means[:, <span class="hljs-number">1</span>], <span class="hljs-string">&quot;o-&quot;</span>, color=<span class="hljs-string">&quot;#17a98c&quot;</span>, label=<span class="hljs-string">&quot;label spreading&quot;</span>)
+plt.xscale(<span class="hljs-string">&quot;log&quot;</span>)
+plt.xticks(budgets, [<span class="hljs-built_in">str</span>(b) <span class="hljs-keyword">for</span> b <span class="hljs-keyword">in</span> budgets])
+plt.xlabel(<span class="hljs-string">&quot;labels per class&quot;</span>)
+plt.ylabel(<span class="hljs-string">&quot;accuracy on all 300 points&quot;</span>)
+plt.legend()
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;With a few labels, the unlabeled points&#x27; shape is worth a lot. With many labels, the gap closes.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text"> 1 labels per class: supervised only 0.722, label spreading 0.992
+ 2 labels per class: supervised only 0.807, label spreading 0.996
+ 5 labels per class: supervised only 0.850, label spreading 0.995
+10 labels per class: supervised only 0.949, label spreading 0.998
+25 labels per class: supervised only 0.987, label spreading 0.999</pre><img src="../assets/out/ml-w6d5-sol-66ee6933.png" width="613" height="409" alt="Figure produced by this code" loading="lazy"><pre class="text">With a few labels, the unlabeled points' shape is worth a lot. With many labels, the gap closes.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="2" data-lesson="ml-w6d5" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Which situation is semi-supervised learning made for?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Then plain supervised learning is enough."><span class="key">A</span><span>Every example is labeled</span></button><button type="button" class="opt" data-i="1" data-why="That's unsupervised learning."><span class="key">B</span><span>No examples are labeled</span></button><button type="button" class="opt" data-i="2" data-why="Exactly: use the unlabeled data's shape plus the few labels."><span class="key">C</span><span>A few labeled examples and many unlabeled ones</span></button><button type="button" class="opt" data-i="3" data-why="That's reinforcement learning."><span class="key">D</span><span>An agent learning from rewards</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w6d5" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">Self-training keeps getting worse each round. The most likely reason is…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="More correct labels would help, not hurt."><span class="key">A</span><span>Too many labels</span></button><button type="button" class="opt" data-i="1" data-why="Early mistakes become training data, which makes the mistakes more confident."><span class="key">B</span><span>Confirmation bias: the model trains on its own wrong pseudo-labels</span></button><button type="button" class="opt" data-i="2" data-why="Clean data helps."><span class="key">C</span><span>The data is too clean</span></button><button type="button" class="opt" data-i="3" data-why="Self-training here has no learning rate."><span class="key">D</span><span>The learning rate</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w6d5" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Label spreading works best when…</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Then the graph connects the classes and labels leak across."><span class="key">A</span><span>The classes overlap heavily</span></button><button type="button" class="opt" data-i="1" data-why="Then labels flow within a class and stop at the gaps: the cluster assumption."><span class="key">B</span><span>Each class forms a dense, connected region separated by gaps</span></button><button type="button" class="opt" data-i="2" data-why="Their positions don't matter much, as long as each class has one."><span class="key">C</span><span>Labels are spread at random</span></button><button type="button" class="opt" data-i="3" data-why="It needs unlabeled data to spread into."><span class="key">D</span><span>There is no unlabeled data</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Semi-supervised learning lets a few labels spread through the structure of many unlabeled points; graph methods follow the data's shape, while self-training must watch out for confirmation bias.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Labels from quantum experiments are expensive: each needs many shots or a separate reference measurement. That makes semi-supervised ideas natural partners for QML. And the graph here is built from a similarity, so it can just as well be built from a <b>quantum kernel</b> (Quantum ML tutorial, week 2).</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Zhu and Goldberg's short book <em>Introduction to Semi-Supervised Learning</em> (2009) covers self-training and graph methods with care. Label spreading comes from Zhou and coauthors, "Learning with local and global consistency" (NIPS, 2003); the scikit-learn user guide's "Semi-supervised learning" page shows both methods in code.</p>
+</div></div>
+<p class="muted mb0">That's week 6 of Machine Learning! Saturday: optional flashback. Next week: reinforcement learning, where an agent learns from rewards.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w6d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w7d1.html"><img src="../assets/icons/agent.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Agents, rewards and MDPs</span></span></a><div class="also-today" data-date="2026-12-04" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w6d4.html">← Autoencoders</a><a href="../ml/w7d1.html">Agents &amp; rewards →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

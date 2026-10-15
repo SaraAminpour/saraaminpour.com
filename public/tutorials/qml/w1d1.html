@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why quantum machine learning? · Quantum Machine Learning · Quantum Path</title>
+<meta name="description" content="Where the two tutorials meet: a map of quantum machine learning, the four steps every quantum model follows, and an honest look at what's known and what isn't.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mva52clc">
+<script src="../assets/js/config.js?v=mva52clc"></script>
+<script src="../assets/js/catalog.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-core.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-viz.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-sim.js?v=mva52clc"></script>
+<script defer src="../assets/js/qp-lab.js?v=mva52clc"></script>
+<script defer src="../assets/js/lessons/qml-w1d1.js?v=mva52clc"></script>
+</head>
+<body class="track-qml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html" aria-current="page"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/90</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../qml/index.html">Quantum Machine Learning</a><span class="muted">›</span><a href="../qml/index.html#week-1">Week 1 · Data meets qubits</a><span class="muted">›</span><span class="chip plain">Day 1</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon qml"><img src="../assets/icons/map.svg" alt=""></div>
+    <div>
+      <span class="chip qml"><span class="dot"></span>Quantum Machine Learning</span>
+      <h1>Why quantum machine learning?</h1>
+      <p class="subtitle">Where the two tutorials meet: a map of quantum machine learning, the four steps every quantum model follows, and an honest look at what's known and what isn't.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 12 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">qml-w1d1.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Place a problem on the QML map: classical or quantum data, classical or quantum algorithm</span></li><li><span>Describe the four steps of a quantum model: encode, process, measure, learn</span></li><li><span>Say honestly what is known, and unknown, about quantum advantage in learning</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 12 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Two halves, one whole</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-cheer.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">You finished two tutorials: machine learning (models, losses, gradients, honest testing) and quantum computing (qubits, gates, measurement, noise, trainable circuits). Each one alone is a field. This tutorial puts them together, and it's also where the research questions start: the kind Sara's lab works on.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>The map, the pipeline, the honest truth</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>The map.</b> Ask two questions: is the <em>data</em> classical or quantum, and is the <em>algorithm</em> classical or quantum? That gives four corners:</p>
+<ul>
+<li><b>CC</b>: classical data, classical algorithm. Everything in the Machine Learning tutorial.</li>
+<li><b>CQ</b>: classical data, quantum algorithm. Quantum kernels and trainable quantum classifiers on ordinary datasets: weeks 1 to 3 here.</li>
+<li><b>QC</b>: quantum data, classical algorithm. Ordinary ML on measurement results: reading qubits out, reconstructing states, calibrating devices.</li>
+<li><b>QQ</b>: quantum data, quantum algorithm. Learning straight from quantum states, with no measurement in between. Many researchers think this is where quantum learners will help first (week 4).</li>
+</ul>
+<p><b>The pipeline.</b> Every CQ model in this tutorial follows four steps:</p>
+<ol class="task-list">
+<li><b>Encode</b> the data point <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span> into a state with a circuit <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>U</mi><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">U(x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">U</span><span class="mopen">(</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span> (this week).</li>
+<li><b>Process</b> it with a circuit <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo stretchy="false">(</mo><mi mathvariant="bold-italic">θ</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">W(\boldsymbol\theta)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">W</span><span class="mopen">(</span><span class="mord"><span class="mord"><span class="mord boldsymbol" style="margin-right:0.03194em;">θ</span></span></span><span class="mclose">)</span></span></span></span> that has trainable knobs (week 3), or compare two encoded states (week 2).</li>
+<li><b>Measure</b>: expectation values, estimated from shots.</li>
+<li><b>Learn</b>: a classical computer turns the knobs, or trains an SVM on the measured similarities.</li>
+</ol>
+<p><b>The honest truth.</b> For ordinary classical data, nobody has shown that today's quantum models learn better than good classical ones; careful benchmarks keep finding strong classical baselines hard to beat. Some celebrated quantum speedups were later matched by classical "quantum-inspired" algorithms. On the other hand, advantages <em>have</em> been proven for specially constructed problems and, most convincingly, for learning from quantum data. And practical hurdles are real: loading data, shot noise, barren plateaus, hardware noise. That's not a reason to stop; it's the research map.</p>
+<p class="big-idea">Encode, process, measure, learn, and always compare with a strong classical baseline.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Sort the examples</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Eight real projects. Where does each one sit on the map?</p>
+<div data-widget="qmlmap"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">For each card ask two questions: where did the data come from, a classical record or a quantum device? And what does the learning, an ordinary computer or a quantum circuit? The QC corner is the one people forget, and it's already used in every quantum lab.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The smallest quantum model</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>qml-w1d1.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/qml/qml-w1d1.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/qml/qml-w1d1.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · encode, process, measure</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">from</span> qiskit <span class="hljs-keyword">import</span> QuantumCircuit
+<span class="hljs-keyword">from</span> qiskit.quantum_info <span class="hljs-keyword">import</span> Statevector, SparsePauliOp
+
+Z0 = SparsePauliOp(<span class="hljs-string">&quot;IZ&quot;</span>)                      <span class="hljs-comment"># Z on qubit 0 (Qiskit reads Pauli strings right to left)</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">model</span>(<span class="hljs-params">x, knobs</span>):
+    qc = QuantumCircuit(<span class="hljs-number">2</span>)
+    qc.ry(x[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+    qc.ry(x[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)                            <span class="hljs-comment"># 1. encode: two features become two rotation angles</span>
+    qc.cx(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>)                               <span class="hljs-comment"># 2. process: entangle the qubits...</span>
+    qc.ry(knobs[<span class="hljs-number">0</span>], <span class="hljs-number">0</span>)
+    qc.ry(knobs[<span class="hljs-number">1</span>], <span class="hljs-number">1</span>)                        <span class="hljs-comment">#    ...and turn two trainable knobs</span>
+    <span class="hljs-keyword">return</span> Statevector(qc).expectation_value(Z0).real      <span class="hljs-comment"># 3. measure: &lt;Z&gt; of qubit 0, between -1 and +1</span>
+
+x = np.array([<span class="hljs-number">0.4</span>, <span class="hljs-number">2.0</span>])
+knobs = np.array([<span class="hljs-number">0.3</span>, -<span class="hljs-number">0.8</span>])
+output = model(x, knobs)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;model output <span class="hljs-subst">{output:+<span class="hljs-number">.3</span>f}</span>  -&gt;  predicted class <span class="hljs-subst">{<span class="hljs-built_in">int</span>(output &lt; <span class="hljs-number">0</span>)}</span>  (class 1 when &lt;Z&gt; &lt; 0)&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">model output +0.775  -&gt;  predicted class 0  (class 1 when &lt;Z&gt; &lt; 0)</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · the crudest learner: random search</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons
+<span class="hljs-keyword">from</span> sklearn.preprocessing <span class="hljs-keyword">import</span> MinMaxScaler
+
+X, y = make_moons(n_samples=<span class="hljs-number">200</span>, noise=<span class="hljs-number">0.15</span>, random_state=<span class="hljs-number">0</span>)
+X = MinMaxScaler((<span class="hljs-number">0</span>, np.pi)).fit_transform(X)            <span class="hljs-comment"># features become angles between 0 and pi</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">accuracy</span>(<span class="hljs-params">knobs</span>):
+    predictions = np.array([<span class="hljs-built_in">int</span>(model(x, knobs) &lt; <span class="hljs-number">0</span>) <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> X])
+    <span class="hljs-keyword">return</span> (predictions == y).mean()
+
+rng = np.random.default_rng(<span class="hljs-number">0</span>)
+tries = rng.uniform(-np.pi, np.pi, size=(<span class="hljs-number">300</span>, <span class="hljs-number">2</span>))
+scores = [accuracy(k) <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> tries]
+best = <span class="hljs-built_in">int</span>(np.argmax(scores))
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;random knobs: accuracy between <span class="hljs-subst">{<span class="hljs-built_in">min</span>(scores):<span class="hljs-number">.2</span>f}</span> and <span class="hljs-subst">{<span class="hljs-built_in">max</span>(scores):<span class="hljs-number">.2</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;best of 300: <span class="hljs-subst">{scores[best]:<span class="hljs-number">.2</span>f}</span> with knobs <span class="hljs-subst">{tries[best].<span class="hljs-built_in">round</span>(<span class="hljs-number">2</span>)}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">random knobs: accuracy between 0.22 and 0.77
+best of 300: 0.77 with knobs [-0.68  2.45]</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: compared with what?</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Train a logistic regression on the same points. Is the little quantum model better?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.linear_model <span class="hljs-keyword">import</span> LogisticRegression
+
+baseline = <span class="hljs-literal">None</span>        <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> LogisticRegression().fit(X, y), then its .score(X, y)</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;quantum model, best of 300 random knobs:&quot;</span>, <span class="hljs-built_in">max</span>(scores), <span class="hljs-string">&quot;  logistic regression:&quot;</span>, baseline)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>LogisticRegression().fit(X, y).score(X, y)</code>: one line, as in ML week 3.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.linear_model <span class="hljs-keyword">import</span> LogisticRegression
+
+baseline = LogisticRegression().fit(X, y).score(X, y)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quantum model, best of 300 random knobs: <span class="hljs-subst">{<span class="hljs-built_in">max</span>(scores):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;logistic regression:                    <span class="hljs-subst">{baseline:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;A quantum model is not automatically better. Every claim in QML needs a strong classical baseline,&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;and this tutorial will keep asking for one.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">quantum model, best of 300 random knobs: 0.770
+logistic regression:                    0.875
+A quantum model is not automatically better. Every claim in QML needs a strong classical baseline,
+and this tutorial will keep asking for one.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="qml-w1d1" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">A quantum-kernel SVM classifies handwritten digits. Where is it on the map?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The similarities come from a quantum circuit."><span class="key">A</span><span>CC</span></button><button type="button" class="opt" data-i="1" data-why="Classical data (the images), quantum algorithm (the kernel)."><span class="key">B</span><span>CQ</span></button><button type="button" class="opt" data-i="2" data-why="The data isn't quantum."><span class="key">C</span><span>QC</span></button><button type="button" class="opt" data-i="3" data-why="The data isn't quantum."><span class="key">D</span><span>QQ</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="0" data-lesson="qml-w1d1" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">What are the four steps of a quantum model in this tutorial?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Data into a state, a circuit, expectation values, a classical learner."><span class="key">A</span><span>Encode, process, measure, learn</span></button><button type="button" class="opt" data-i="1" data-why="That's a workflow, not the model's structure."><span class="key">B</span><span>Train, test, deploy, repeat</span></button><button type="button" class="opt" data-i="2" data-why="Measuring first would destroy the state before anything happens."><span class="key">C</span><span>Measure, encode, learn, process</span></button><button type="button" class="opt" data-i="3" data-why="Those are protocols from QC week 5."><span class="key">D</span><span>Prepare, entangle, teleport, measure</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="qml-w1d1" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Which statement about quantum advantage in machine learning is fair today?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="No such result exists."><span class="key">A</span><span>Quantum models beat classical ones on all data</span></button><button type="button" class="opt" data-i="1" data-why="That's the honest state of the field, and why baselines matter."><span class="key">B</span><span>Advantages are proven for special problems and for quantum data; for ordinary data, strong classical baselines are hard to beat</span></button><button type="button" class="opt" data-i="2" data-why="They can; the question is whether they do it better."><span class="key">C</span><span>Quantum computers can't do machine learning</span></button><button type="button" class="opt" data-i="3" data-why="More qubits also bring noise and barren plateaus."><span class="key">D</span><span>Advantage is guaranteed once there are enough qubits</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">QML sorts into CC, CQ, QC and QQ; a quantum model encodes, processes, measures and learns; and for ordinary data, every claim must beat a strong classical baseline.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Research link</span>
+<p class="mb0">Sara's group works on quantum machine learning for messy, real data, such as imbalanced datasets. Keep a note of every question this tutorial raises for you: those are the seeds of research projects.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Cerezo, Verdon, Huang, Cincio and Coles, "Challenges and opportunities in quantum machine learning" (Nature Computational Science, 2022), is a clear overview. Schuld and Petruccione's book <em>Machine Learning with Quantum Computers</em> (Springer, 2nd edition 2021) covers this whole tutorial in depth.</p>
+</div></div>
+<p class="muted mb0">Next in Quantum ML: the first step, putting numbers into qubits.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="qml-w1d1">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn qml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../qml/w1d2.html"><img src="../assets/icons/encode.svg" alt=""><span><small>Next in Quantum Machine Learning</small><span class="t">Basis and angle encoding</span></span></a><div class="also-today" data-date="2027-01-04" data-track="qml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><span></span><a href="../qml/w1d2.html">Angle encoding →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>
