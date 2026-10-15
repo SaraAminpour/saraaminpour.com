@@ -126,6 +126,8 @@ type Project = {
   stack: string[];
   href: string;
   tryHref: string;
+  openLabel?: string;
+  tryLabel?: string;
 };
 
 const projects: Project[] = [
@@ -177,6 +179,32 @@ const projects: Project[] = [
     ],
     href: "https://ponder.sara-aminpour.com",
     tryHref: "https://ponder.sara-aminpour.com/today"
+  },
+  {
+    slug: "lumen",
+    name: "Lumen",
+    tagline: "a video player that fixes subtitle timing",
+    year: "2026",
+    kind: "Desktop app / Windows",
+    image: "/projects/lumen.jpg",
+    imageAlt:
+      "Lumen playing a rainy neon street scene with the subtitle panel open: the subtitle track, a timing readout of plus or minus zero seconds with nudge buttons, and the snap-to-a-line controls.",
+    caption: "Lumen with its subtitle panel open beside the film.",
+    description:
+      "A modern video player for Windows, built on the mpv engine, so it opens almost any file, uses the graphics card to decode, and draws subtitles cleanly. It began with subtitles that ran a second early or late. Fixing that usually means a hidden menu and trial and error; Lumen gives timing its own panel instead, with one-tap nudges, a snap-to-line key that pulls the subtitle you are hearing onto the screen, and a sync assistant that works out the delay from two taps. Around that sits a calm interface with glass panels and gentle animation: controls that fade after three seconds without the mouse moving, instant full screen on a double-click, a second subtitle in another language, seek-bar previews, Continue watching, and the next episode queued on its own. It installs for one user without admin rights, and the code is open on GitHub.",
+    stack: [
+      "Python",
+      "PySide6",
+      "Qt Quick / QML",
+      "libmpv",
+      "OpenGL",
+      "C launcher",
+      "NSIS installer"
+    ],
+    href: "https://github.com/SaraAminpour/lumen-player/releases/latest",
+    tryHref: "https://github.com/SaraAminpour/lumen-player",
+    openLabel: "Download for Windows",
+    tryLabel: "Source on GitHub"
   }
 ];
 
@@ -1015,10 +1043,10 @@ function HomePage() {
                       </h3>
                       <div className="project-actions">
                         <a className="btn btn-ink btn-ink-solid" href={project.href} target="_blank" rel="noreferrer">
-                          Open {project.name}
+                          {project.openLabel ?? `Open ${project.name}`}
                         </a>
                         <a className="btn btn-ink" href={project.tryHref} target="_blank" rel="noreferrer">
-                          Try it without an account
+                          {project.tryLabel ?? "Try it without an account"}
                         </a>
                       </div>
                     </div>
