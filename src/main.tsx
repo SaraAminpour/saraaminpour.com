@@ -243,13 +243,13 @@ const projects: Project[] = [
     name: "Lumen",
     tagline: "a video player that fixes subtitle timing",
     year: "2026",
-    kind: "Desktop app / Windows",
+    kind: "App / Windows and Android",
     image: "/projects/lumen.jpg",
     imageAlt:
       "Lumen playing a rainy neon street scene with the subtitle panel open: the subtitle track, a timing readout of plus or minus zero seconds with nudge buttons, and the snap-to-a-line controls.",
     caption: "Lumen with its subtitle panel open beside the film.",
     description:
-      "A modern video player for Windows, built on the mpv engine, so it opens almost any file, uses the graphics card to decode, and draws subtitles cleanly. It began with subtitles that ran a second early or late. Fixing that usually means a hidden menu and trial and error; Lumen gives timing its own panel instead, with one-tap nudges, a snap-to-line key that pulls the subtitle you are hearing onto the screen, and a sync assistant that works out the delay from two taps. Around that sits a calm interface with glass panels and gentle animation: controls that fade after three seconds without the mouse moving, instant full screen on a double-click, a second subtitle in another language, seek-bar previews, Continue watching, and the next episode queued on its own. It installs for one user without admin rights, and the code is open on GitHub.",
+      "A modern video player for Windows and Android, built on the mpv engine, so it opens almost any file, uses the graphics card to decode, and draws subtitles cleanly. It began with subtitles that ran a second early or late. Fixing that usually means a hidden menu and trial and error; Lumen gives timing its own panel instead, with one-tap nudges, a snap-to-line key that pulls the subtitle you are hearing onto the screen, and a sync assistant that works out the delay from two taps. Around that sits a calm interface with glass panels and gentle animation: controls that fade after three seconds without the mouse moving, instant full screen on a double-click, a second subtitle in another language, seek-bar previews, Continue watching, and the next episode queued on its own. On Android it adds touch gestures, picture-in-picture and YouTube through Share. Both versions update themselves from GitHub, and the code is open there too.",
     stack: [
       "Python",
       "PySide6",
@@ -257,11 +257,13 @@ const projects: Project[] = [
       "libmpv",
       "OpenGL",
       "C launcher",
-      "NSIS installer"
+      "NSIS installer",
+      "Kotlin",
+      "Jetpack Compose"
     ],
     href: "https://github.com/SaraAminpour/lumen-player/releases/latest",
     tryHref: "https://github.com/SaraAminpour/lumen-player",
-    openLabel: "Download for Windows",
+    openLabel: "Download for Windows & Android",
     tryLabel: "Source on GitHub"
   }
 ];
