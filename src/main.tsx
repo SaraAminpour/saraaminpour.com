@@ -144,9 +144,9 @@ const tutorials: Tutorial[] = [
   {
     name: "Machine Learning",
     href: "/tutorials/ml/",
-    length: "7 weeks / 35 lessons",
+    length: "9 weeks / 45 lessons",
     summary:
-      "From a first nearest-neighbor classifier to an agent that learns from rewards, with every optimizer written out in PyTorch.",
+      "From a first nearest-neighbor classifier to convolutional networks and transformers: every classic model, an agent that learns from rewards, and every optimizer written out in PyTorch.",
     weeks: [
       "learning from examples",
       "regression and gradient descent",
@@ -154,7 +154,9 @@ const tutorials: Tutorial[] = [
       "kernels and support vector machines",
       "neural networks",
       "learning without labels",
-      "reinforcement learning"
+      "reinforcement learning",
+      "the rest of the classical toolbox",
+      "images, sequences and attention"
     ]
   },
   {
@@ -1237,7 +1239,7 @@ function HomePage() {
                       Start learning
                     </a>
                     <a className="btn btn-ink" href="/tutorials/glossary.html">
-                      Glossary of 120 terms
+                      Glossary of 150 terms
                     </a>
                   </div>
                 </div>
@@ -1250,7 +1252,7 @@ function HomePage() {
                     idea drawn out in pictures, something to play with right on
                     the page, real code with the output it really printed, a
                     small exercise with a solution, and three quick questions.
-                    The code comes as 90 Jupyter notebooks that open in Google
+                    The code comes as 100 Jupyter notebooks that open in Google
                     Colab, and your progress stays in your own browser.
                   </p>
                   <p className="index-terms project-stack">

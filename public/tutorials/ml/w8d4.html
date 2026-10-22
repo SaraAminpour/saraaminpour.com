@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>t-SNE: maps of high-dimensional data · Machine Learning · Quantum Path</title>
+<meta name="description" content="PCA gives the best flat view of a data cloud. t-SNE draws a map instead: it keeps every point next to its true neighbors, and turns 64-dimensional digits into islands you can see.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mvjtga28">
+<script src="../assets/js/config.js?v=mvjtga28"></script>
+<script src="../assets/js/catalog.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-core.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-viz.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-sim.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-lab.js?v=mvjtga28"></script>
+<script defer src="../assets/js/lessons/ml-w8d4.js?v=mvjtga28"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/100</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-8">Week 8 · The rest of the classical toolbox</a><span class="muted">›</span><span class="chip plain">Day 4</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/tsne.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>t-SNE: maps of high-dimensional data</h1>
+      <p class="subtitle">PCA gives the best flat view of a data cloud. t-SNE draws a map instead: it keeps every point next to its true neighbors, and turns 64-dimensional digits into islands you can see.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 10 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w8d4.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Explain what t-SNE keeps (who is near whom) and what it throws away</span></li><li><span>Use perplexity, the one knob, and see how it changes the map</span></li><li><span>Read a t-SNE map honestly: island sizes and gaps between islands don't mean much</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 10 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>A map of a world you can't see</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-wow.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">A world map flattens a round planet: it must distort something, and different maps choose different things to keep. Data with 64 dimensions is much harder to flatten than a globe. In week 6, PCA chose to keep the directions with the most spread. Today's method chooses to keep the neighborhoods.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Keep the neighbors, forget the rest</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>t-SNE</b> (t-distributed stochastic neighbor embedding, van der Maaten and Hinton, 2008) works in two steps.</p>
+<ol class="task-list">
+<li><b>In the original space</b>, every point <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span> shares out a "neighbor score" <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>p</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">p_{ij}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7167em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">p</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">ij</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> over the other points, mostly to the closest ones, using a bell curve around <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>i</mi></mrow><annotation encoding="application/x-tex">i</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6595em;"></span><span class="mord mathnormal">i</span></span></span></span>. Its width is set so that each point has about the same effective number of neighbors, the <b>perplexity</b> (usually 5 to 50).</li>
+<li><b>On the page</b>, it places one dot per point, at random at first, and computes the same kind of score <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>q</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></mrow><annotation encoding="application/x-tex">q_{ij}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7167em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">q</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">ij</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span> between dots, this time with a heavy-tailed curve (Student's t), so far-apart dots don't pull hard on each other. Then it moves the dots by gradient descent until the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi></mrow><annotation encoding="application/x-tex">q</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">q</span></span></span></span>'s match the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">p</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">p</span></span></span></span>'s as well as possible.</li>
+</ol>
+<p>Each step pulls true neighbors together and pushes everyone else apart a little, so points that belong together gather into <b>islands</b>. The heavy tail gives the islands room, which is why t-SNE maps look so clean.</p>
+<p>What it keeps: <em>who is near whom</em>. What it doesn't keep, and what people often misread:</p>
+<ul>
+<li><b>Island sizes.</b> Each point gets about the same number of neighbors, so a tight cluster and a spread-out cluster come out a similar size.</li>
+<li><b>Distances between islands.</b> Only neighborhoods are matched, so a big gap doesn't mean "very different".</li>
+<li><b>Axes.</b> They have no meaning, and another random start rotates and rearranges the map.</li>
+</ul>
+<p>t-SNE is for <b>looking</b>, not for features: there's no formula to place a new point, and it's slow for very large data. <b>UMAP</b> (2018) is a faster cousin with the same idea and the same warnings.</p>
+<p class="big-idea">t-SNE draws a map where neighbors stay neighbors: great for spotting groups, but island sizes, gaps and axes mean little.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Watch the map form</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>400 handwritten digits, 40 of each, run live in your browser. The dots start squeezed together in the middle and spread out into islands. Hover a dot to see which image it is; colors are the true digits, which t-SNE never sees.</p>
+<div data-widget="tsne"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">After the map settles, press <b>New random start</b>: do the same digits form islands again, in new places? Try perplexity 3 (many little clumps) and 80 (rounder, more crowded). Then show the PCA view: which digits does PCA mix up that t-SNE keeps apart? Hover the dots that sit on the wrong island: are they odd-looking digits?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>t-SNE in code</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w8d4.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w8d4.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w8d4.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · PCA view versus t-SNE map</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> time
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_digits
+<span class="hljs-keyword">from</span> sklearn.decomposition <span class="hljs-keyword">import</span> PCA
+<span class="hljs-keyword">from</span> sklearn.manifold <span class="hljs-keyword">import</span> TSNE
+
+digits = load_digits()
+X = digits.data / <span class="hljs-number">16.0</span>
+y = digits.target
+colors = np.array([<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>, <span class="hljs-string">&quot;#17a98c&quot;</span>, <span class="hljs-string">&quot;#e45fa3&quot;</span>, <span class="hljs-string">&quot;#7b5cfa&quot;</span>, <span class="hljs-string">&quot;#f0ac2e&quot;</span>, <span class="hljs-string">&quot;#5aa9f2&quot;</span>, <span class="hljs-string">&quot;#c08a5a&quot;</span>, <span class="hljs-string">&quot;#2c2842&quot;</span>, <span class="hljs-string">&quot;#9bd36b&quot;</span>])
+
+t0 = time.perf_counter()
+emb = TSNE(n_components=<span class="hljs-number">2</span>, perplexity=<span class="hljs-number">30</span>, random_state=<span class="hljs-number">0</span>).fit_transform(X)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;t-SNE of <span class="hljs-subst">{<span class="hljs-built_in">len</span>(X)}</span> digits took <span class="hljs-subst">{time.perf_counter() - t0:<span class="hljs-number">.1</span>f}</span> s&quot;</span>)
+pcs = PCA(n_components=<span class="hljs-number">2</span>).fit_transform(X)
+
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">11</span>, <span class="hljs-number">4.6</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, Z, title <span class="hljs-keyword">in</span> [(axes[<span class="hljs-number">0</span>], pcs, <span class="hljs-string">&quot;PCA: the best flat view&quot;</span>), (axes[<span class="hljs-number">1</span>], emb, <span class="hljs-string">&quot;t-SNE: a map of neighbors&quot;</span>)]:
+    ax.scatter(Z[:, <span class="hljs-number">0</span>], Z[:, <span class="hljs-number">1</span>], c=colors[y], s=<span class="hljs-number">6</span>)
+    <span class="hljs-keyword">for</span> d <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>):                                   <span class="hljs-comment"># write each digit at the middle of its points</span>
+        cx, cy = np.median(Z[y == d], axis=<span class="hljs-number">0</span>)
+        ax.text(cx, cy, <span class="hljs-built_in">str</span>(d), fontsize=<span class="hljs-number">16</span>, weight=<span class="hljs-string">&quot;bold&quot;</span>, ha=<span class="hljs-string">&quot;center&quot;</span>, va=<span class="hljs-string">&quot;center&quot;</span>,
+                bbox=<span class="hljs-built_in">dict</span>(boxstyle=<span class="hljs-string">&quot;circle&quot;</span>, fc=<span class="hljs-string">&quot;white&quot;</span>, ec=colors[d], alpha=<span class="hljs-number">0.85</span>))
+    ax.set_title(title)
+    ax.set_xticks([])
+    ax.set_yticks([])
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">t-SNE of 1797 digits took 5.2 s</pre><img src="../assets/out/ml-w8d4-map-f243fbcf.png" width="1222" height="518" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · perplexity</span><button type="button" class="btn-copy">Copy</button></div><pre><code>sub = np.random.default_rng(<span class="hljs-number">0</span>).choice(<span class="hljs-built_in">len</span>(X), <span class="hljs-number">600</span>, replace=<span class="hljs-literal">False</span>)
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, figsize=(<span class="hljs-number">12</span>, <span class="hljs-number">3.8</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, perp <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [<span class="hljs-number">3</span>, <span class="hljs-number">30</span>, <span class="hljs-number">150</span>]):
+    Z = TSNE(perplexity=perp, random_state=<span class="hljs-number">0</span>).fit_transform(X[sub])
+    ax.scatter(Z[:, <span class="hljs-number">0</span>], Z[:, <span class="hljs-number">1</span>], c=colors[y[sub]], s=<span class="hljs-number">8</span>)
+    ax.set_title(<span class="hljs-string">f&quot;perplexity <span class="hljs-subst">{perp}</span>&quot;</span>)
+    ax.set_xticks([])
+    ax.set_yticks([])
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d4-perplexity-2a5e353b.png" width="1332" height="430" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · how not to read the map</span><button type="button" class="btn-copy">Copy</button></div><pre><code>rng = np.random.default_rng(<span class="hljs-number">1</span>)
+A = rng.normal([<span class="hljs-number">0</span>, <span class="hljs-number">0</span>], <span class="hljs-number">0.2</span>, (<span class="hljs-number">150</span>, <span class="hljs-number">2</span>))       <span class="hljs-comment"># tight</span>
+B = rng.normal([<span class="hljs-number">3</span>, <span class="hljs-number">0</span>], <span class="hljs-number">1.0</span>, (<span class="hljs-number">150</span>, <span class="hljs-number">2</span>))       <span class="hljs-comment"># wide</span>
+Cc = rng.normal([<span class="hljs-number">15</span>, <span class="hljs-number">0</span>], <span class="hljs-number">0.5</span>, (<span class="hljs-number">150</span>, <span class="hljs-number">2</span>))     <span class="hljs-comment"># far away</span>
+G = np.vstack([A, B, Cc])
+lab = np.repeat([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>], <span class="hljs-number">150</span>)
+Z = TSNE(perplexity=<span class="hljs-number">30</span>, random_state=<span class="hljs-number">0</span>).fit_transform(G)
+fig, (ax1, ax2) = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">11</span>, <span class="hljs-number">3.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+ax1.scatter(G[:, <span class="hljs-number">0</span>], G[:, <span class="hljs-number">1</span>], c=colors[lab], s=<span class="hljs-number">8</span>)
+ax1.set_title(<span class="hljs-string">&quot;The real data&quot;</span>)
+ax1.set_aspect(<span class="hljs-string">&quot;equal&quot;</span>)
+ax2.scatter(Z[:, <span class="hljs-number">0</span>], Z[:, <span class="hljs-number">1</span>], c=colors[lab], s=<span class="hljs-number">8</span>)
+ax2.set_title(<span class="hljs-string">&quot;Its t-SNE map: similar sizes, misleading gaps&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d4-caveats-3827fcba.png" width="1222" height="386" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<p>In the real data, the green group is five times farther away than the other two are from each other, and the orange one is five times tighter than the blue. On the map, all three are about the same size, about the same distance apart.</p>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: same data, different seeds</h2></div><span class="mins">optional</span></div><div class="card">
+<p>Draw three maps of the same 600 digits from three random starts. What stays, what changes?</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code>fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, figsize=(<span class="hljs-number">12</span>, <span class="hljs-number">3.8</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>]):
+    Z = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> TSNE(perplexity=30, init=&quot;random&quot;, random_state=seed).fit_transform(X[sub])</span>
+    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> scatter Z colored by colors[y[sub]], and title the plot with the seed</span>
+plt.show()</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>Inside the loop: <code>Z = TSNE(perplexity=30, init="random", random_state=seed).fit_transform(X[sub])</code>, then <code>ax.scatter(Z[:, 0], Z[:, 1], c=colors[y[sub]], s=8)</code> and <code>ax.set_title(...)</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code>fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, figsize=(<span class="hljs-number">12</span>, <span class="hljs-number">3.8</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, seed <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>]):
+    Z = TSNE(perplexity=<span class="hljs-number">30</span>, init=<span class="hljs-string">&quot;random&quot;</span>, random_state=seed).fit_transform(X[sub])
+    ax.scatter(Z[:, <span class="hljs-number">0</span>], Z[:, <span class="hljs-number">1</span>], c=colors[y[sub]], s=<span class="hljs-number">8</span>)
+    ax.set_title(<span class="hljs-string">f&quot;random_state = <span class="hljs-subst">{seed}</span>&quot;</span>)
+    ax.set_xticks([])
+    ax.set_yticks([])
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The islands (which digits clump together) stay; where they sit, and which way up, changes.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d4-sol-0021d40f.png" width="1332" height="430" alt="Figure produced by this code" loading="lazy"><pre class="text">The islands (which digits clump together) stay; where they sit, and which way up, changes.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w8d4" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">What does t-SNE try to keep from the original space?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Impossible to keep all of them when squashing 64 dimensions into 2."><span class="key">A</span><span>All the distances</span></button><button type="button" class="opt" data-i="1" data-why="It matches neighbor scores; far-away structure is mostly let go."><span class="key">B</span><span>Which points are neighbors of which</span></button><button type="button" class="opt" data-i="2" data-why="That's PCA."><span class="key">C</span><span>The directions of most variance</span></button><button type="button" class="opt" data-i="3" data-why="It never sees the labels: the colors are added afterwards."><span class="key">D</span><span>The class labels</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w8d4" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">On a t-SNE map, island A is twice as big as island B. What can you conclude?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Sizes don't carry over: every point gets about the same number of neighbors."><span class="key">A</span><span>A is twice as spread out in the real data</span></button><button type="button" class="opt" data-i="1" data-why="Look at the real data (or at PCA) before saying anything about spread."><span class="key">B</span><span>Not much: t-SNE evens out island sizes</span></button><button type="button" class="opt" data-i="2" data-why="Point counts aren't shown by size either."><span class="key">C</span><span>A has twice as many points</span></button><button type="button" class="opt" data-i="3" data-why="Maps don't rank islands."><span class="key">D</span><span>A is more important</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w8d4" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Can you feed a t-SNE map's coordinates into a classifier for new data?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The map is built for the points it was given."><span class="key">A</span><span>Yes, always</span></button><button type="button" class="opt" data-i="1" data-why="Adding a point means rerunning it. Use PCA or an autoencoder for features."><span class="key">B</span><span>Not easily: t-SNE has no formula to place a new point</span></button><button type="button" class="opt" data-i="2" data-why="Perplexity doesn't change that."><span class="key">C</span><span>Only with perplexity 30</span></button><button type="button" class="opt" data-i="3" data-why="The data type doesn't matter."><span class="key">D</span><span>Only for images</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">t-SNE places points on a page so that neighbors in the original space stay neighbors, with perplexity setting how many neighbors count; it reveals groups beautifully, but island sizes, gaps and axes carry little meaning.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">QML papers often show t-SNE or UMAP maps of the states their circuits produce, to argue that a quantum feature map "separates the classes". Now you know to ask: is that visible in the real distances too, or only on the map? And the kernel matrices of Quantum ML week 2 are exactly the kind of similarity scores t-SNE starts from.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">Wattenberg, Viégas and Johnson, "How to use t-SNE effectively" (Distill, 2016), with interactive examples of every pitfall. The original: van der Maaten and Hinton, "Visualizing data using t-SNE" (Journal of Machine Learning Research, 2008). UMAP: McInnes, Healy and Melville (2018).</p>
+</div></div>
+<p class="muted mb0">Tomorrow: the week's project, a showdown of every model you know.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w8d4">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w8d5.html"><img src="../assets/icons/toolbox.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Project: which model when?</span></span></a><div class="also-today" data-date="2026-12-24" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w8d3.html">← More clustering</a><a href="../ml/w8d5.html">Model showdown →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

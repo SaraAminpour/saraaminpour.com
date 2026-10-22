@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: which model when? · Machine Learning · Quantum Path</title>
+<meta name="description" content="Every classifier you've met, on the same data, judged the same honest way. Then a one-page guide to choosing a model, and the habit that matters more than any model: comparing fairly.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mvjtga28">
+<script src="../assets/js/config.js?v=mvjtga28"></script>
+<script src="../assets/js/catalog.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-core.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-viz.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-sim.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-lab.js?v=mvjtga28"></script>
+<script defer src="../assets/js/lessons/ml-w8d5.js?v=mvjtga28"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/100</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-8">Week 8 · The rest of the classical toolbox</a><span class="muted">›</span><span class="chip plain">Day 5</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/toolbox.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Project: which model when?</h1>
+      <p class="subtitle">Every classifier you've met, on the same data, judged the same honest way. Then a one-page guide to choosing a model, and the habit that matters more than any model: comparing fairly.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 13 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w8d5.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>See how kNN, logistic regression, naive Bayes, trees, forests, boosting, SVMs and networks each draw a boundary</span></li><li><span>Compare models fairly: the same folds, cross-validation on the training set, one final look at the test set</span></li><li><span>Pick a sensible first model for a new problem, and know when a difference is only noise</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#project"><span class="num">5</span>Project</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 13 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>The no free lunch rule</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-cheer.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">There is a famous theorem in machine learning called "no free lunch": averaged over every possible problem, no model beats any other. So "which model is best?" has no answer. "Which model is best <em>for this data</em>?" does, and today you'll find out how to answer it honestly.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Every model has a shape</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Each model you've learned makes a different assumption about what the boundary looks like. That assumption, its <b>inductive bias</b>, is why it wins on some data and loses on other data:</p>
+<table class="tablelike model-table">
+<thead><tr><th>Model</th><th>Its boundary</th><th>Good first choice when…</th><th>Watch out for…</th></tr></thead>
+<tbody>
+<tr><td>Logistic regression</td><td>a straight line (plane)</td><td>you want a fast, explainable baseline</td><td>curved boundaries, unless you add features</td></tr>
+<tr><td>Naive Bayes</td><td>simple curves from bell shapes</td><td>text, tiny data, you need speed</td><td>overconfident probabilities</td></tr>
+<tr><td>k-nearest neighbors</td><td>any shape, from the examples</td><td>few features, plenty of examples</td><td>scaling, many features, slow predictions</td></tr>
+<tr><td>Decision tree</td><td>boxes, axis by axis</td><td>you need rules a person can read</td><td>overfitting: one tree is unstable</td></tr>
+<tr><td>Random forest</td><td>smoothed boxes</td><td>tables of data, little tuning time</td><td>large memory, less explainable</td></tr>
+<tr><td>Gradient boosting</td><td>finely shaped boxes</td><td>tables of data: often the strongest</td><td>tuning, and stopping in time</td></tr>
+<tr><td>SVM with a kernel</td><td>smooth curves, widest margin</td><td>small or medium data, many features</td><td>scaling, choosing <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi></mrow><annotation encoding="application/x-tex">C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span>, big data</td></tr>
+<tr><td>Neural network</td><td>any smooth shape</td><td>images, sound, text, lots of data</td><td>tuning, data hunger, explaining it</td></tr>
+</tbody>
+</table>
+<p>Rules of thumb for a new table of data: start with logistic regression as a baseline, then try a forest and gradient boosting. For images, sequences and text, go to the networks of next week.</p>
+<p><b>Comparing fairly</b> matters more than the choice. Give every model the same <b>cross-validation folds</b> (week 1) on the training set, put scaling inside a <b>pipeline</b> so it's learned from the training folds only, tune each model's knobs the same way, and open the test set <b>once</b>, for the winner. And if two models are within a fold-to-fold standard deviation of each other, call it a tie and pick the simpler one.</p>
+<p class="big-idea">No model wins everywhere: know each one's shape, compare them with the same folds, and treat small differences as ties.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>The zoo</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Eight models, trained right here on the same 150 points (dots), scored on the same 100 test points (rings). The gold frame marks the winner.</p>
+<div data-widget="zoo"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Go through the four datasets. Which model fails on the circles, and why? Which one draws boxes everywhere? Then switch to high noise and press <b>New sample</b> a few times: does the same model win every time, or do the top few take turns?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The showdown in code</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w8d5.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w8d5.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w8d5.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · eight models, three datasets</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> matplotlib.colors <span class="hljs-keyword">import</span> LinearSegmentedColormap
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons, make_circles, make_classification
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+<span class="hljs-keyword">from</span> sklearn.pipeline <span class="hljs-keyword">import</span> make_pipeline
+<span class="hljs-keyword">from</span> sklearn.preprocessing <span class="hljs-keyword">import</span> StandardScaler
+<span class="hljs-keyword">from</span> sklearn.neighbors <span class="hljs-keyword">import</span> KNeighborsClassifier
+<span class="hljs-keyword">from</span> sklearn.linear_model <span class="hljs-keyword">import</span> LogisticRegression
+<span class="hljs-keyword">from</span> sklearn.naive_bayes <span class="hljs-keyword">import</span> GaussianNB
+<span class="hljs-keyword">from</span> sklearn.tree <span class="hljs-keyword">import</span> DecisionTreeClassifier
+<span class="hljs-keyword">from</span> sklearn.ensemble <span class="hljs-keyword">import</span> RandomForestClassifier, HistGradientBoostingClassifier
+<span class="hljs-keyword">from</span> sklearn.svm <span class="hljs-keyword">import</span> SVC
+<span class="hljs-keyword">from</span> sklearn.neural_network <span class="hljs-keyword">import</span> MLPClassifier
+
+models = {
+    <span class="hljs-string">&quot;k-nearest neighbors&quot;</span>: make_pipeline(StandardScaler(), KNeighborsClassifier(n_neighbors=<span class="hljs-number">7</span>)),
+    <span class="hljs-string">&quot;logistic regression&quot;</span>: make_pipeline(StandardScaler(), LogisticRegression()),
+    <span class="hljs-string">&quot;naive Bayes&quot;</span>: GaussianNB(),
+    <span class="hljs-string">&quot;decision tree&quot;</span>: DecisionTreeClassifier(max_depth=<span class="hljs-number">5</span>, random_state=<span class="hljs-number">0</span>),
+    <span class="hljs-string">&quot;random forest&quot;</span>: RandomForestClassifier(n_estimators=<span class="hljs-number">200</span>, random_state=<span class="hljs-number">0</span>),
+    <span class="hljs-string">&quot;gradient boosting&quot;</span>: HistGradientBoostingClassifier(random_state=<span class="hljs-number">0</span>),
+    <span class="hljs-string">&quot;SVM (RBF kernel)&quot;</span>: make_pipeline(StandardScaler(), SVC()),
+    <span class="hljs-string">&quot;neural network&quot;</span>: make_pipeline(StandardScaler(), MLPClassifier((<span class="hljs-number">32</span>, <span class="hljs-number">32</span>), max_iter=<span class="hljs-number">2000</span>, random_state=<span class="hljs-number">0</span>)),
+}
+Xl, yl = make_classification(n_samples=<span class="hljs-number">300</span>, n_features=<span class="hljs-number">2</span>, n_redundant=<span class="hljs-number">0</span>, n_informative=<span class="hljs-number">2</span>, n_clusters_per_class=<span class="hljs-number">1</span>,
+                             class_sep=<span class="hljs-number">1.2</span>, random_state=<span class="hljs-number">3</span>)
+datasets = {<span class="hljs-string">&quot;moons&quot;</span>: make_moons(n_samples=<span class="hljs-number">300</span>, noise=<span class="hljs-number">0.3</span>, random_state=<span class="hljs-number">0</span>),
+            <span class="hljs-string">&quot;circles&quot;</span>: make_circles(n_samples=<span class="hljs-number">300</span>, noise=<span class="hljs-number">0.15</span>, factor=<span class="hljs-number">0.5</span>, random_state=<span class="hljs-number">1</span>),
+            <span class="hljs-string">&quot;almost linear&quot;</span>: (Xl, yl)}
+apricot_blue = LinearSegmentedColormap.from_list(<span class="hljs-string">&quot;apricot_blue&quot;</span>, [<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#ffffff&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>])
+
+fig, axes = plt.subplots(<span class="hljs-number">3</span>, <span class="hljs-number">8</span>, figsize=(<span class="hljs-number">19</span>, <span class="hljs-number">7.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> row, (dname, (X, y)) <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(datasets.items()):
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">0.4</span>, random_state=<span class="hljs-number">0</span>)
+    x0, x1 = X[:, <span class="hljs-number">0</span>].<span class="hljs-built_in">min</span>() - <span class="hljs-number">0.5</span>, X[:, <span class="hljs-number">0</span>].<span class="hljs-built_in">max</span>() + <span class="hljs-number">0.5</span>
+    y0, y1 = X[:, <span class="hljs-number">1</span>].<span class="hljs-built_in">min</span>() - <span class="hljs-number">0.5</span>, X[:, <span class="hljs-number">1</span>].<span class="hljs-built_in">max</span>() + <span class="hljs-number">0.5</span>
+    xx, yy = np.meshgrid(np.linspace(x0, x1, <span class="hljs-number">120</span>), np.linspace(y0, y1, <span class="hljs-number">120</span>))
+    <span class="hljs-keyword">for</span> col, (mname, model) <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(models.items()):
+        ax = axes[row, col]
+        model.fit(X_tr, y_tr)
+        grid = np.c_[xx.ravel(), yy.ravel()]
+        <span class="hljs-keyword">if</span> <span class="hljs-built_in">hasattr</span>(model, <span class="hljs-string">&quot;predict_proba&quot;</span>):
+            p = model.predict_proba(grid)[:, <span class="hljs-number">1</span>]
+        <span class="hljs-keyword">else</span>:                                                     <span class="hljs-comment"># the SVM gives a score, not a probability</span>
+            p = <span class="hljs-number">1</span> / (<span class="hljs-number">1</span> + np.exp(-model.decision_function(grid)))
+        p = p.reshape(xx.shape)
+        ax.contourf(xx, yy, p, levels=<span class="hljs-number">12</span>, cmap=apricot_blue, alpha=<span class="hljs-number">0.6</span>)
+        ax.scatter(X_te[:, <span class="hljs-number">0</span>], X_te[:, <span class="hljs-number">1</span>], c=np.where(y_te == <span class="hljs-number">0</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>), s=<span class="hljs-number">7</span>, edgecolors=<span class="hljs-string">&quot;none&quot;</span>)
+        ax.text(x1 - <span class="hljs-number">0.1</span>, y0 + <span class="hljs-number">0.1</span>, <span class="hljs-string">f&quot;<span class="hljs-subst">{model.score(X_te, y_te):<span class="hljs-number">.2</span>f}</span>&quot;</span>, ha=<span class="hljs-string">&quot;right&quot;</span>, va=<span class="hljs-string">&quot;bottom&quot;</span>, fontsize=<span class="hljs-number">12</span>, weight=<span class="hljs-string">&quot;bold&quot;</span>)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        <span class="hljs-keyword">if</span> row == <span class="hljs-number">0</span>:
+            ax.set_title(mname, fontsize=<span class="hljs-number">11</span>)
+        <span class="hljs-keyword">if</span> col == <span class="hljs-number">0</span>:
+            ax.set_ylabel(dname, fontsize=<span class="hljs-number">12</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d5-zoo-543191e0.png" width="2102" height="826" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · cross-validation on real data</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> time
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_breast_cancer, load_digits
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> cross_validate, StratifiedKFold
+
+real = {<span class="hljs-string">&quot;tumors&quot;</span>: load_breast_cancer(return_X_y=<span class="hljs-literal">True</span>), <span class="hljs-string">&quot;digits&quot;</span>: load_digits(return_X_y=<span class="hljs-literal">True</span>)}
+splits = {}
+folds = StratifiedKFold(n_splits=<span class="hljs-number">5</span>, shuffle=<span class="hljs-literal">True</span>, random_state=<span class="hljs-number">0</span>)
+<span class="hljs-keyword">for</span> dname, (X, y) <span class="hljs-keyword">in</span> real.items():
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>, stratify=y)
+    splits[dname] = (X_tr, X_te, y_tr, y_te)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{dname}</span>: <span class="hljs-subst">{X.shape[<span class="hljs-number">0</span>]}</span> examples, <span class="hljs-subst">{X.shape[<span class="hljs-number">1</span>]}</span> features, <span class="hljs-subst">{<span class="hljs-built_in">len</span>(<span class="hljs-built_in">set</span>(y))}</span> classes&quot;</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">{<span class="hljs-string">&#x27;model&#x27;</span>:22s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;CV accuracy&#x27;</span>:&gt;13s}</span>   <span class="hljs-subst">{<span class="hljs-string">&#x27;fit time&#x27;</span>:&gt;8s}</span>&quot;</span>)
+    <span class="hljs-keyword">for</span> mname, model <span class="hljs-keyword">in</span> models.items():
+        r = cross_validate(model, X_tr, y_tr, cv=folds)
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">{mname:22s}</span> <span class="hljs-subst">{r[<span class="hljs-string">&#x27;test_score&#x27;</span>].mean():<span class="hljs-number">.3</span>f}</span> ± <span class="hljs-subst">{r[<span class="hljs-string">&#x27;test_score&#x27;</span>].std():<span class="hljs-number">.3</span>f}</span>   <span class="hljs-subst">{<span class="hljs-number">1000</span> * r[<span class="hljs-string">&#x27;fit_time&#x27;</span>].mean():<span class="hljs-number">6.0</span>f}</span> ms&quot;</span>)
+    <span class="hljs-built_in">print</span>()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">tumors: 569 examples, 30 features, 2 classes
+  model                    CV accuracy   fit time
+  k-nearest neighbors    0.972 ± 0.022        1 ms
+  logistic regression    0.981 ± 0.012        2 ms
+  naive Bayes            0.939 ± 0.027        1 ms
+  decision tree          0.927 ± 0.020        2 ms
+  random forest          0.962 ± 0.009      229 ms
+  gradient boosting      0.979 ± 0.017       87 ms
+  SVM (RBF kernel)       0.981 ± 0.012        2 ms
+  neural network         0.977 ± 0.011      190 ms
+
+digits: 1797 examples, 64 features, 10 classes
+  model                    CV accuracy   fit time
+  k-nearest neighbors    0.975 ± 0.008        2 ms
+  logistic regression    0.971 ± 0.010       24 ms
+  naive Bayes            0.832 ± 0.017        4 ms
+  decision tree          0.708 ± 0.059        5 ms
+  random forest          0.977 ± 0.010      309 ms
+  gradient boosting      0.967 ± 0.012     1355 ms
+  SVM (RBF kernel)       0.978 ± 0.004       23 ms
+  neural network         0.971 ± 0.004      353 ms</pre></div></details></div>
+<p>On the tumors, six models are within about one standard deviation of each other: a tie. On the digits, kNN, the forest, the SVM, the network and logistic regression all reach about 97%, while a single tree manages 71% and naive Bayes 83%: on 64 pixels, the features are far from independent. Notice the times too: equal accuracy at 2 ms beats equal accuracy at 1,300 ms.</p>
+</div></section>
+
+<section class="step reveal" id="project"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-star.svg" alt=""></span><div><span class="label">Project</span><h2>Project: tune, test, and a third dataset</h2></div><span class="mins">3 min</span></div><div class="card">
+<ol class="task-list">
+<li>Run the tuning cell: <code>GridSearchCV</code> picks the SVM's <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi></mrow><annotation encoding="application/x-tex">C</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi></mrow><annotation encoding="application/x-tex">\gamma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.05556em;">γ</span></span></span></span> with the training folds, then the test set is opened once.</li>
+<li>Your turn, on wines: split off a test set, run all eight models through 5-fold cross-validation, pick the winner, and report its test accuracy once.</li>
+<li>Write one sentence: is your winner really better than the runner-up?</li>
+</ol>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">step 1 · tune the finalist, then test once</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> GridSearchCV
+
+X_tr, X_te, y_tr, y_te = splits[<span class="hljs-string">&quot;digits&quot;</span>]
+search = GridSearchCV(make_pipeline(StandardScaler(), SVC()),
+                      {<span class="hljs-string">&quot;svc__C&quot;</span>: [<span class="hljs-number">1</span>, <span class="hljs-number">10</span>, <span class="hljs-number">100</span>], <span class="hljs-string">&quot;svc__gamma&quot;</span>: [<span class="hljs-number">0.001</span>, <span class="hljs-number">0.01</span>, <span class="hljs-number">0.1</span>]}, cv=folds)
+search.fit(X_tr, y_tr)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;best settings:&quot;</span>, search.best_params_)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;best CV accuracy:  <span class="hljs-subst">{search.best_score_:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;final test accuracy (looked at once): <span class="hljs-subst">{search.score(X_te, y_te):<span class="hljs-number">.3</span>f}</span>&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">best settings: {'svc__C': 100, 'svc__gamma': 0.001}
+best CV accuracy:  0.982
+final test accuracy (looked at once): 0.984</pre></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">step 2 · the wine showdown</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_wine
+
+X, y = load_wine(return_X_y=<span class="hljs-literal">True</span>)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>, stratify=y)
+scores = {}
+<span class="hljs-keyword">for</span> mname, model <span class="hljs-keyword">in</span> models.items():
+    scores[mname] = <span class="hljs-literal">None</span>    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> the mean of cross_validate(model, X_tr, y_tr, cv=folds)[&quot;test_score&quot;]</span>
+winner = <span class="hljs-literal">None</span>               <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> the name with the highest score</span>
+<span class="hljs-built_in">print</span>(scores)
+<span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> fit models[winner] on all of X_tr, y_tr and print its accuracy on X_te, y_te</span></code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>scores[mname] = cross_validate(model, X_tr, y_tr, cv=folds)["test_score"].mean()</code>, then <code>winner = max(scores, key=scores.get)</code> and <code>models[winner].fit(X_tr, y_tr).score(X_te, y_te)</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_wine
+
+X, y = load_wine(return_X_y=<span class="hljs-literal">True</span>)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>, stratify=y)
+scores = {mname: cross_validate(model, X_tr, y_tr, cv=folds)[<span class="hljs-string">&quot;test_score&quot;</span>].mean() <span class="hljs-keyword">for</span> mname, model <span class="hljs-keyword">in</span> models.items()}
+<span class="hljs-keyword">for</span> mname, s <span class="hljs-keyword">in</span> <span class="hljs-built_in">sorted</span>(scores.items(), key=<span class="hljs-keyword">lambda</span> kv: -kv[<span class="hljs-number">1</span>]):
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{mname:22s}</span> <span class="hljs-subst">{s:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+winner = <span class="hljs-built_in">max</span>(scores, key=scores.get)
+test = models[winner].fit(X_tr, y_tr).score(X_te, y_te)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nwinner: <span class="hljs-subst">{winner}</span>, test accuracy <span class="hljs-subst">{test:<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Three models tie at the top and all eight are within about 2.5 points: with 133 training wines, that is&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;three or four wines. A tie is a tie, so pick the simplest of the leaders (here, logistic regression).&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;And a perfect score on 45 test wines is partly luck: don&#x27;t expect 100% on the next 45.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">neural network         0.963
+logistic regression    0.963
+SVM (RBF kernel)       0.963
+random forest          0.962
+k-nearest neighbors    0.955
+naive Bayes            0.955
+decision tree          0.940
+gradient boosting      0.940
+
+winner: neural network, test accuracy 1.000
+Three models tie at the top and all eight are within about 2.5 points: with 133 training wines, that is
+three or four wines. A tie is a tie, so pick the simplest of the leaders (here, logistic regression).
+And a perfect score on 45 test wines is partly luck: don't expect 100% on the next 45.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w8d5" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Model A scores 0.963 ± 0.02 in cross-validation and model B 0.955 ± 0.02. What should you conclude?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="0.008 is well inside the ± 0.02 noise."><span class="key">A</span><span>A is clearly better</span></button><button type="button" class="opt" data-i="1" data-why="Pick whichever is simpler, faster or easier to explain."><span class="key">B</span><span>It's a tie: the difference is much smaller than the fold-to-fold variation</span></button><button type="button" class="opt" data-i="2" data-why="Higher accuracy is better; but here neither is."><span class="key">C</span><span>B is better because its score is lower</span></button><button type="button" class="opt" data-i="3" data-why="That turns the test set into a validation set, and its score is no longer honest."><span class="key">D</span><span>Test both on the test set and keep the better one</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w8d5" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">Why put <code>StandardScaler</code> inside a pipeline instead of scaling all the data first?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Speed is about the same."><span class="key">A</span><span>It's faster</span></button><button type="button" class="opt" data-i="1" data-why="Each fold's means and spreads must come from data the model trains on."><span class="key">B</span><span>So the scaling is learned from the training folds only, and nothing leaks from the validation folds</span></button><button type="button" class="opt" data-i="2" data-why="Plain models work fine without one."><span class="key">C</span><span>Pipelines are required by scikit-learn</span></button><button type="button" class="opt" data-i="3" data-why="For kNN, SVMs, logistic regression and networks it matters a lot."><span class="key">D</span><span>Scaling doesn't matter</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w8d5" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">A new problem: a table with 20 columns and 50,000 rows. A sensible plan?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="On tables, networks rarely beat boosting and cost much more tuning."><span class="key">A</span><span>Start with a big neural network</span></button><button type="button" class="opt" data-i="1" data-why="Cheap baseline first, then the usual winners on tables."><span class="key">B</span><span>A logistic regression baseline, then a forest and gradient boosting, compared with the same folds</span></button><button type="button" class="opt" data-i="2" data-why="One tree is a good explainer, rarely the most accurate."><span class="key">C</span><span>Only a single decision tree</span></button><button type="button" class="opt" data-i="3" data-why="t-SNE draws a map; it doesn't classify."><span class="key">D</span><span>t-SNE</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>This week in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Naive Bayes adds up evidence, boosting lets small trees fix each other's mistakes, hierarchical clustering and DBSCAN find groups of any number and shape, t-SNE draws maps of high-dimensional data, and no model wins everywhere, so compare them with the same folds and call small differences ties.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">This is exactly the test a QML paper must pass (Quantum ML, week 4): a quantum classifier only means something next to <em>tuned</em> classical models, compared with the same splits, with error bars. You've now built that baseline table yourself.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">The scikit-learn user guide's "Classifier comparison" example (the zoo above, in its original form), and the "Choosing the right estimator" flowchart. For why boosted trees still win on tables: Grinsztajn, Oyallon and Varoquaux, "Why do tree-based models still outperform deep learning on tabular data?" (NeurIPS Datasets and Benchmarks, 2022). The theorem: Wolpert, "The lack of a priori distinctions between learning algorithms" (Neural Computation, 1996).</p>
+</div></div>
+<p class="muted mb0">That's week 8 of Machine Learning! Saturday: optional flashback. Next week: deep learning for images, sequences and language.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w8d5">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w9d1.html"><img src="../assets/icons/conv.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Convolution: filters that slide</span></span></a><div class="also-today" data-date="2026-12-25" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w8d4.html">← t-SNE maps</a><a href="../ml/w9d1.html">Convolution →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

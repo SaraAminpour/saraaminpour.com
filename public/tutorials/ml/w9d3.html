@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project: a CNN reads your digits · Machine Learning · Quantum Path</title>
+<meta name="description" content="Week 5's digit reader against a CNN, on digits that aren't neatly centered. Then the trick every image model uses: data augmentation.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mvjtga28">
+<script src="../assets/js/config.js?v=mvjtga28"></script>
+<script src="../assets/js/catalog.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-core.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-viz.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-sim.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-lab.js?v=mvjtga28"></script>
+<script defer src="../assets/js/lessons/ml-w9d3.js?v=mvjtga28"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/100</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-9">Week 9 · Deep learning: images, sequences and attention</a><span class="muted">›</span><span class="chip plain">Day 3</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/cnnread.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Project: a CNN reads your digits</h1>
+      <p class="subtitle">Week 5's digit reader against a CNN, on digits that aren't neatly centered. Then the trick every image model uses: data augmentation.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 13 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w9d3.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Test a model honestly on a realistic change in the data: shifted digits</span></li><li><span>Explain why convolutions and global pooling tolerate shifts better than a plain network</span></li><li><span>Use data augmentation, and see what it can and can't fix</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#project"><span class="num">5</span>Project</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 13 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>One pixel to the left</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-oops.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">Week 5's network read 97% of the test digits. Now move every test digit one pixel to the right. Nothing about the digit changes; a person wouldn't even notice. The network's accuracy drops to about 40%. Today you'll see why, and fix it.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Where versus what</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>A plain network gives every pixel its own weights. It learns that "ink at pixel (3, 5)" means something, so when the same stroke lands at pixel (3, 6), it is new to the network: it has never learned anything about it.</p>
+<p>A CNN asks the same questions at every position, because its filters slide. If a stroke moves, its feature map moves with it: convolution is <b>shift-equivariant</b>. Today's CNN ends with a <b>global max pool</b>, which keeps only each channel's strongest response, wherever it is. So the final scores barely change when the digit moves: it is close to <b>shift-invariant</b>. The image edges spoil this a little (ink that moves out of the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8</mn><mo>×</mo><mn>8</mn></mrow><annotation encoding="application/x-tex">8 \times 8</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span> box is gone), but the CNN is still far more robust.</p>
+<p>The second fix works for any model: <b>data augmentation</b>. During training, show each digit at a random small shift. The labels stay right, so it's more varied training data for free. Image models routinely augment with shifts, crops, flips, rotations and color changes; sound models with noise and speed changes.</p>
+<p>Augmentation teaches what it shows: trained on shifts of at most one pixel, does a model also handle two? That's where the two ideas differ, and the project measures it.</p>
+<p class="big-idea">A plain network learns where; a CNN learns what. Data augmentation teaches any model that some changes don't matter, but only the changes you show it.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Push the digit around</h2></div><span class="mins">3 min</span></div><div class="card">
+<p>Both networks were trained with shifts of at most one pixel each way. Draw a digit (it's shrunk to <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8</mn><mo>×</mo><mn>8</mn></mrow><annotation encoding="application/x-tex">8 \times 8</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span> the same way as in week 5), or load a test digit, then move it with the arrows.</p>
+<div data-widget="shiftread"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Move a test digit two steps right, then two steps left. Which network keeps reading it? Then try moving up and down: why is that much harder for both? (Look at what happens to the top and bottom rows of the 8 × 8 picture.)</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>The data and the contestants</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w9d3.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w9d3.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w9d3.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · the digits, and a shift function</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> copy
+<span class="hljs-keyword">import</span> time
+<span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">import</span> torch
+<span class="hljs-keyword">import</span> torch.nn <span class="hljs-keyword">as</span> nn
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> load_digits
+<span class="hljs-keyword">from</span> sklearn.model_selection <span class="hljs-keyword">import</span> train_test_split
+
+torch.set_num_threads(<span class="hljs-number">1</span>)
+digits = load_digits()
+images = digits.images / <span class="hljs-number">16.0</span>                 <span class="hljs-comment"># (1797, 8, 8), values 0 to 1</span>
+labels = digits.target
+X_rest, X_test, y_rest, y_test = train_test_split(images, labels, test_size=<span class="hljs-number">0.2</span>, random_state=<span class="hljs-number">0</span>, stratify=labels)
+X_train, X_val, y_train, y_val = train_test_split(X_rest, y_rest, test_size=<span class="hljs-number">0.25</span>, random_state=<span class="hljs-number">0</span>, stratify=y_rest)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">shift</span>(<span class="hljs-params">imgs, dx, dy</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Move a stack of images dx pixels right and dy pixels down; what moves out is lost, blanks move in.&quot;&quot;&quot;</span>
+    out = np.roll(imgs, (dy, dx), axis=(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>))
+    <span class="hljs-keyword">if</span> dy &gt; <span class="hljs-number">0</span>: out[:, :dy, :] = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">if</span> dy &lt; <span class="hljs-number">0</span>: out[:, dy:, :] = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">if</span> dx &gt; <span class="hljs-number">0</span>: out[:, :, :dx] = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">if</span> dx &lt; <span class="hljs-number">0</span>: out[:, :, dx:] = <span class="hljs-number">0</span>
+    <span class="hljs-keyword">return</span> out
+
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, figsize=(<span class="hljs-number">8</span>, <span class="hljs-number">2.4</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, (dx, dy) <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">1</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">2</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">1</span>, <span class="hljs-number">1</span>)]):
+    ax.imshow(shift(X_test[:<span class="hljs-number">1</span>], dx, dy)[<span class="hljs-number">0</span>], cmap=<span class="hljs-string">&quot;Purples&quot;</span>, vmin=<span class="hljs-number">0</span>, vmax=<span class="hljs-number">1</span>)
+    ax.set_title(<span class="hljs-string">f&quot;moved (<span class="hljs-subst">{dx}</span>, <span class="hljs-subst">{dy}</span>)&quot;</span>, fontsize=<span class="hljs-number">11</span>)
+    ax.axis(<span class="hljs-string">&quot;off&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w9d3-data-891a3faa.png" width="892" height="259" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · a plain network and a CNN</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">def</span> <span class="hljs-title function_">make_mlp</span>():
+    torch.manual_seed(<span class="hljs-number">0</span>)
+    <span class="hljs-keyword">return</span> nn.Sequential(nn.Flatten(), nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">64</span>), nn.ReLU(), nn.Linear(<span class="hljs-number">64</span>, <span class="hljs-number">10</span>))
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">make_cnn</span>():
+    torch.manual_seed(<span class="hljs-number">0</span>)
+    <span class="hljs-keyword">return</span> nn.Sequential(
+        nn.Conv2d(<span class="hljs-number">1</span>, <span class="hljs-number">16</span>, <span class="hljs-number">3</span>, padding=<span class="hljs-number">1</span>), nn.ReLU(),
+        nn.Conv2d(<span class="hljs-number">16</span>, <span class="hljs-number">32</span>, <span class="hljs-number">3</span>, padding=<span class="hljs-number">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="hljs-number">2</span>),       <span class="hljs-comment"># 8 x 8 -&gt; 4 x 4</span>
+        nn.Conv2d(<span class="hljs-number">32</span>, <span class="hljs-number">32</span>, <span class="hljs-number">3</span>, padding=<span class="hljs-number">1</span>), nn.ReLU(),
+        nn.AdaptiveMaxPool2d(<span class="hljs-number">1</span>), nn.Flatten(),                             <span class="hljs-comment"># the strongest response per channel</span>
+        nn.Linear(<span class="hljs-number">32</span>, <span class="hljs-number">10</span>))
+
+count = <span class="hljs-keyword">lambda</span> model: <span class="hljs-built_in">sum</span>(p.numel() <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> model.parameters())
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;plain network: <span class="hljs-subst">{count(make_mlp()):,}</span> weights&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;CNN:           <span class="hljs-subst">{count(make_cnn()):,}</span> weights&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">plain network: 4,810 weights
+CNN:           14,378 weights</pre></div></details></div>
+</div></section>
+
+<section class="step reveal" id="project"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-star.svg" alt=""></span><div><span class="label">Project</span><h2>Project: train, shift, augment</h2></div><span class="mins">4 min</span></div><div class="card">
+<ol class="task-list">
+<li>Train both networks on centered digits and test them on digits moved 0, 1 and 2 pixels.</li>
+<li>Train both again with augmentation (random shifts of up to one pixel) and test again.</li>
+<li>Your turn: move the test digits two pixels in each of the four directions. Is every direction equally hard?</li>
+</ol>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">step 1 · train, then test on moved digits</span><button type="button" class="btn-copy">Copy</button></div><pre><code>T = <span class="hljs-keyword">lambda</span> a: torch.tensor(a, dtype=torch.float32).unsqueeze(<span class="hljs-number">1</span>)          <span class="hljs-comment"># (n, 1, 8, 8)</span>
+L = <span class="hljs-keyword">lambda</span> a: torch.tensor(a, dtype=torch.long)
+loss_fn = nn.CrossEntropyLoss()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">fit</span>(<span class="hljs-params">model, augment=<span class="hljs-literal">False</span>, epochs=<span class="hljs-number">60</span></span>):
+    opt = torch.optim.Adam(model.parameters(), lr=<span class="hljs-number">3e-3</span>)
+    rng = np.random.default_rng(<span class="hljs-number">0</span>)
+    best_loss, best_state = <span class="hljs-built_in">float</span>(<span class="hljs-string">&quot;inf&quot;</span>), <span class="hljs-literal">None</span>
+    <span class="hljs-keyword">for</span> epoch <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(epochs):
+        order = rng.permutation(<span class="hljs-built_in">len</span>(X_train))
+        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">0</span>, <span class="hljs-built_in">len</span>(order), <span class="hljs-number">32</span>):
+            idx = order[i:i + <span class="hljs-number">32</span>]
+            xb = X_train[idx]
+            <span class="hljs-keyword">if</span> augment:                                    <span class="hljs-comment"># move each image by -1, 0 or +1 pixels each way</span>
+                xb = np.stack([shift(xb[j:j + <span class="hljs-number">1</span>], *rng.integers(-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">2</span>))[<span class="hljs-number">0</span>] <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(xb))])
+            opt.zero_grad()
+            loss_fn(model(T(xb)), L(y_train[idx])).backward()
+            opt.step()
+        <span class="hljs-keyword">with</span> torch.no_grad():
+            val_loss = loss_fn(model(T(X_val)), L(y_val)).item()
+        <span class="hljs-keyword">if</span> val_loss &lt; best_loss:
+            best_loss, best_state = val_loss, copy.deepcopy(model.state_dict())
+    model.load_state_dict(best_state)
+    <span class="hljs-keyword">return</span> model
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">accuracy</span>(<span class="hljs-params">model, imgs, y</span>):
+    <span class="hljs-keyword">with</span> torch.no_grad():
+        <span class="hljs-keyword">return</span> (model(T(imgs)).argmax(dim=<span class="hljs-number">1</span>).numpy() == y).mean()
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">shift_test</span>(<span class="hljs-params">model</span>):
+    <span class="hljs-string">&quot;&quot;&quot;Test accuracy with every test digit moved by 0, 1 and 2 pixels to the right.&quot;&quot;&quot;</span>
+    <span class="hljs-keyword">return</span> [accuracy(model, shift(X_test, dx, <span class="hljs-number">0</span>), y_test) <span class="hljs-keyword">for</span> dx <span class="hljs-keyword">in</span> (<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>)]
+
+t0 = time.perf_counter()
+mlp, cnn = fit(make_mlp()), fit(make_cnn())
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;trained both in <span class="hljs-subst">{time.perf_counter() - t0:<span class="hljs-number">.0</span>f}</span> s\n&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{<span class="hljs-string">&#x27;&#x27;</span>:14s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;centered&#x27;</span>:&gt;9s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;moved 1&#x27;</span>:&gt;8s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;moved 2&#x27;</span>:&gt;8s}</span>&quot;</span>)
+<span class="hljs-keyword">for</span> name, model <span class="hljs-keyword">in</span> [(<span class="hljs-string">&quot;plain network&quot;</span>, mlp), (<span class="hljs-string">&quot;CNN&quot;</span>, cnn)]:
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{name:14s}</span>&quot;</span> + <span class="hljs-string">&quot;&quot;</span>.join(<span class="hljs-string">f&quot;<span class="hljs-subst">{a:<span class="hljs-number">9.3</span>f}</span>&quot;</span> <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> shift_test(model)))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">trained both in 8 s
+
+                centered  moved 1  moved 2
+plain network     0.964    0.408    0.133
+CNN               0.983    0.789    0.511</pre></div></details></div>
+<p>On centered digits, both are excellent. One pixel to the side, the plain network collapses to 41% and the CNN keeps 79%, thanks to sliding filters and global pooling.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">step 2 · data augmentation</span><button type="button" class="btn-copy">Copy</button></div><pre><code>t0 = time.perf_counter()
+mlp_aug, cnn_aug = fit(make_mlp(), augment=<span class="hljs-literal">True</span>), fit(make_cnn(), augment=<span class="hljs-literal">True</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;trained both in <span class="hljs-subst">{time.perf_counter() - t0:<span class="hljs-number">.0</span>f}</span> s\n&quot;</span>)
+results = {<span class="hljs-string">&quot;plain network&quot;</span>: shift_test(mlp), <span class="hljs-string">&quot;CNN&quot;</span>: shift_test(cnn),
+           <span class="hljs-string">&quot;plain network + augmentation&quot;</span>: shift_test(mlp_aug), <span class="hljs-string">&quot;CNN + augmentation&quot;</span>: shift_test(cnn_aug)}
+plt.figure(figsize=(<span class="hljs-number">6.4</span>, <span class="hljs-number">3.6</span>))
+<span class="hljs-keyword">for</span> (name, acc), color, dash <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(results.items(), [<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#17a98c&quot;</span>, <span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#17a98c&quot;</span>], [<span class="hljs-string">&quot;--&quot;</span>, <span class="hljs-string">&quot;--&quot;</span>, <span class="hljs-string">&quot;-&quot;</span>, <span class="hljs-string">&quot;-&quot;</span>]):
+    plt.plot([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>], acc, dash, marker=<span class="hljs-string">&quot;o&quot;</span>, color=color, label=name)
+plt.xticks([<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>])
+plt.xlabel(<span class="hljs-string">&quot;pixels moved to the right&quot;</span>)
+plt.ylabel(<span class="hljs-string">&quot;test accuracy&quot;</span>)
+plt.ylim(<span class="hljs-number">0</span>, <span class="hljs-number">1.02</span>)
+plt.legend(fontsize=<span class="hljs-number">9.5</span>)
+plt.title(<span class="hljs-string">&quot;Trained on shifts of at most 1 pixel&quot;</span>)
+plt.show()
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{<span class="hljs-string">&#x27;&#x27;</span>:30s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;centered&#x27;</span>:&gt;9s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;moved 1&#x27;</span>:&gt;8s}</span> <span class="hljs-subst">{<span class="hljs-string">&#x27;moved 2&#x27;</span>:&gt;8s}</span>&quot;</span>)
+<span class="hljs-keyword">for</span> name, acc <span class="hljs-keyword">in</span> results.items():
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">{name:30s}</span>&quot;</span> + <span class="hljs-string">&quot;&quot;</span>.join(<span class="hljs-string">f&quot;<span class="hljs-subst">{a:<span class="hljs-number">9.3</span>f}</span>&quot;</span> <span class="hljs-keyword">for</span> a <span class="hljs-keyword">in</span> acc))</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">trained both in 9 s</pre><img src="../assets/out/ml-w9d3-augment-1ed008a6.png" width="621" height="404" alt="Figure produced by this code" loading="lazy"><pre class="text">                                centered  moved 1  moved 2
+plain network                     0.964    0.408    0.133
+CNN                               0.983    0.789    0.511
+plain network + augmentation      0.939    0.942    0.422
+CNN + augmentation                0.978    0.981    0.914</pre></div></details></div>
+<p>Augmentation rescues both at one pixel, the shift they were shown. At two pixels, a shift neither ever saw, the augmented CNN still reads 91% and the plain network only 42%: the CNN learned "what", the plain network only learned a few more "wheres". (The CNN has more weights, 14,378 against 4,810, but more weights alone can't make a plain network read pixels it never saw ink in.)</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">step 3 · four directions</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> dx, dy <span class="hljs-keyword">in</span> [(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>), (-<span class="hljs-number">2</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">2</span>), (<span class="hljs-number">0</span>, -<span class="hljs-number">2</span>)]:
+    moved = <span class="hljs-literal">None</span>    <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> shift(X_test, dx, dy)</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;moved (<span class="hljs-subst">{dx:+d}</span>, <span class="hljs-subst">{dy:+d}</span>):  plain network <span class="hljs-subst">{<span class="hljs-literal">None</span>}</span>   CNN <span class="hljs-subst">{<span class="hljs-literal">None</span>}</span>&quot;</span>)   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> accuracy(...) of both</span></code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p>For each direction: <code>moved = shift(X_test, dx, dy)</code>, then <code>accuracy(mlp_aug, moved, y_test)</code> and <code>accuracy(cnn_aug, moved, y_test)</code>.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> dx, dy <span class="hljs-keyword">in</span> [(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>), (-<span class="hljs-number">2</span>, <span class="hljs-number">0</span>), (<span class="hljs-number">0</span>, <span class="hljs-number">2</span>), (<span class="hljs-number">0</span>, -<span class="hljs-number">2</span>)]:
+    moved = shift(X_test, dx, dy)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;moved (<span class="hljs-subst">{dx:+d}</span>, <span class="hljs-subst">{dy:+d}</span>):  plain network <span class="hljs-subst">{accuracy(mlp_aug, moved, y_test):<span class="hljs-number">.3</span>f}</span>   CNN <span class="hljs-subst">{accuracy(cnn_aug, moved, y_test):<span class="hljs-number">.3</span>f}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;The digits fill the full height of the 8 x 8 box but not its width, so moving up or down&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;pushes part of the digit out of the picture: no network can read ink that isn&#x27;t there.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">moved (+2, +0):  plain network 0.422   CNN 0.914
+moved (-2, +0):  plain network 0.411   CNN 0.942
+moved (+0, +2):  plain network 0.242   CNN 0.547
+moved (+0, -2):  plain network 0.178   CNN 0.428
+The digits fill the full height of the 8 x 8 box but not its width, so moving up or down
+pushes part of the digit out of the picture: no network can read ink that isn't there.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w9d3" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">Why does the plain network fail on digits moved by one pixel?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Training went fine: 96% on centered digits."><span class="key">A</span><span>Its learning rate was too high</span></button><button type="button" class="opt" data-i="1" data-why="It learned patterns at fixed positions; a shift puts the ink where those weights never saw it."><span class="key">B</span><span>Each pixel has its own weights, so ink in new places means nothing to what it learned</span></button><button type="button" class="opt" data-i="2" data-why="A deeper plain network would have the same problem."><span class="key">C</span><span>It has too few layers</span></button><button type="button" class="opt" data-i="3" data-why="The labels don't change when a digit moves."><span class="key">D</span><span>Moved digits are mislabeled</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w9d3" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">What does data augmentation do?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The model stays the same."><span class="key">A</span><span>Adds more layers</span></button><button type="button" class="opt" data-i="1" data-why="It shows the model that these changes don't change the answer."><span class="key">B</span><span>Trains on modified copies of the examples (here: shifted), with the same labels</span></button><button type="button" class="opt" data-i="2" data-why="It adds variety; it doesn't remove anything."><span class="key">C</span><span>Removes hard examples</span></button><button type="button" class="opt" data-i="3" data-why="The test set must stay as it is."><span class="key">D</span><span>Changes the test set</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w9d3" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Augmented with shifts of up to one pixel, the CNN reads 91% of digits moved by two, the plain network 42%. What explains the difference?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="The gap is far too large and consistent for luck."><span class="key">A</span><span>Luck</span></button><button type="button" class="opt" data-i="1" data-why="Built-in structure generalizes; augmentation only covers what it shows."><span class="key">B</span><span>The CNN's sliding filters and global pooling carry over to shifts it never saw; the plain network only learned the shifts it was shown</span></button><button type="button" class="opt" data-i="2" data-why="Both used the same loop, epochs and early stopping."><span class="key">C</span><span>The CNN trained longer</span></button><button type="button" class="opt" data-i="3" data-why="The plain network's 42% says otherwise."><span class="key">D</span><span>Two-pixel shifts are easy</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Convolutions slide and global pooling forgets position, so a CNN tolerates shifted digits far better than a plain network; data augmentation helps any model, but only with the changes it shows, while built-in structure carries over to changes it never saw.</div>
+<div class="callout link"><img src="../assets/icons/ui-link.svg" alt=""><div><span class="title">Quantum link</span>
+<p class="mb0">Building what you know about the data into the model is called an <b>inductive bias</b>, and it's one of the most active ideas in quantum machine learning too: <b>geometric QML</b> designs circuits that respect the data's symmetries, as a CNN respects shifts, and such circuits need less data and are easier to train.</p>
+</div></div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">ISLP section 10.3.4 (data augmentation). Shorten and Khoshgoftaar, "A survey on image data augmentation for deep learning" (Journal of Big Data, 2019). For shifts that still trip CNNs up, and a fix: Zhang, "Making convolutional networks shift-invariant again" (ICML, 2019). Geometric QML: Larocca and coauthors, "Group-invariant quantum machine learning" (PRX Quantum, 2022).</p>
+</div></div>
+<p class="muted mb0">Tomorrow: from images to sequences, with networks that have a memory.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w9d3">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w9d4.html"><img src="../assets/icons/rnn.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">Recurrent networks: memory for sequences</span></span></a><div class="also-today" data-date="2026-12-30" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w9d2.html">← CNNs</a><a href="../ml/w9d4.html">RNNs →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>

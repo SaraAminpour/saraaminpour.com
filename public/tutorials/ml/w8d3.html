@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en" data-base="../" class="public">
+<head>
+<meta charset="utf-8">
+<script>document.documentElement.classList.add("js")</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hierarchical clustering and DBSCAN · Machine Learning · Quantum Path</title>
+<meta name="description" content="k-means needs the number of groups and expects round blobs. Two other methods need neither: one builds a family tree of the data, the other follows dense crowds and sets the stragglers aside.">
+<meta name="theme-color" content="#fffaf4">
+<link rel="icon" href="../assets/icons/logo.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="../assets/css/qpath.css?v=mvjtga28">
+<script src="../assets/js/config.js?v=mvjtga28"></script>
+<script src="../assets/js/catalog.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-core.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-viz.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-sim.js?v=mvjtga28"></script>
+<script defer src="../assets/js/qp-lab.js?v=mvjtga28"></script>
+<script defer src="../assets/js/lessons/ml-w8d3.js?v=mvjtga28"></script>
+</head>
+<body class="track-ml">
+<header class="nav">
+<a class="brand" href="../index.html"><img src="../assets/icons/logo.svg" alt=""><span>Quantum Path <small>· by Sara Aminpour</small></span></a>
+<nav class="nav-links" aria-label="Main"><a class="home-link" href="../index.html">Home</a><a class="trk ml" href="../ml/index.html" aria-current="page"><span class="dot ml"></span>Machine learning</a><a class="trk qc" href="../qc/index.html"><span class="dot qc"></span>Quantum computing</a><a class="trk qml" href="../qml/index.html"><span class="dot qml"></span>Quantum ML</a><a class="" href="../glossary.html">Glossary</a></nav>
+<div class="nav-stats"><span class="pill-stat" title="Study streak (weekends never break it)"><img src="../assets/icons/ui-flame.svg" alt="Streak"><span id="nav-streak">0</span></span><span class="pill-stat optional" title="Lessons finished"><img src="../assets/icons/ui-star.svg" alt="Lessons"><span id="nav-progress">0/100</span></span></div>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false"><img src="../assets/icons/ui-menu.svg" width="24" height="24" alt=""></button>
+</header>
+<div class="mobile-progress"><span></span></div>
+<main>
+<header class="lesson-hero wrap">
+  <div class="crumbs"><a href="../ml/index.html">Machine Learning</a><span class="muted">›</span><a href="../ml/index.html#week-8">Week 8 · The rest of the classical toolbox</a><span class="muted">›</span><span class="chip plain">Day 3</span></div>
+  <div class="hero-grid">
+    <div class="hero-icon ml"><img src="../assets/icons/dendro.svg" alt=""></div>
+    <div>
+      <span class="chip ml"><span class="dot"></span>Machine Learning</span>
+      <h1>Hierarchical clustering and DBSCAN</h1>
+      <p class="subtitle">k-means needs the number of groups and expects round blobs. Two other methods need neither: one builds a family tree of the data, the other follows dense crowds and sets the stragglers aside.</p>
+      <div class="meta-row"><span class="chip plain"><img src="../assets/icons/ui-clock.svg" width="16" height="16" alt="">about 10 min</span><span class="chip plain"><img src="../assets/icons/ui-notebook.svg" width="16" height="16" alt="">ml-w8d3.ipynb</span></div>
+    </div>
+  </div>
+  <div class="card flat" style="margin-top:22px"><b>In this lesson you will</b><ul class="goal-list"><li><span>Build and cut a dendrogram, and choose between single, complete, average and Ward linkage</span></li><li><span>Explain DBSCAN's core, border and noise points, and choose eps with a k-distance plot</span></li><li><span>Know when HDBSCAN helps: crowds of different density</span></li></ul></div>
+</header>
+<div class="wrap lesson-body">
+  <nav class="step-rail" aria-label="Lesson steps"><ol><li><a href="#warmup"><span class="num">1</span>Warm-up</a></li><li><a href="#idea"><span class="num">2</span>Big idea</a></li><li><a href="#play"><span class="num">3</span>Play</a></li><li><a href="#code"><span class="num">4</span>Code</a></li><li><a href="#try"><span class="num">5</span>Your turn</a></li><li><a href="#check"><span class="num">6</span>Check yourself</a></li><li><a href="#wrap"><span class="num">7</span>Wrap-up</a></li></ol><div class="time">about 10 minutes</div></nav>
+  <div class="lesson-main">
+
+
+<section class="step reveal" id="warmup"><div class="step-head"><span class="badge"><img src="../assets/icons/step-warmup.svg" alt=""></span><div><span class="label">Warm-up</span><h2>Families and crowds</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="hook"><img class="qubi qubi-float" src="../assets/img/qubi-think.svg" alt="Qubi, your guide"><div class="speech">
+<p class="mb0">In week 6, k-means split points around <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> centers, and you met two other methods in one sentence each. Biologists group species into a family tree without deciding in advance how many families there are. And from a plane, you'd spot the crowds in a park by where people stand close together, ignoring the lone joggers. Today those two ideas get their full lesson.</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="idea"><div class="step-head"><span class="badge"><img src="../assets/icons/step-idea.svg" alt=""></span><div><span class="label">Big idea</span><h2>Merge from the bottom, or follow the density</h2></div><span class="mins">4 min</span></div><div class="card">
+<p><b>Hierarchical (agglomerative) clustering</b> starts with every point as its own cluster and repeats one step: merge the two closest clusters. After <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n - 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal">n</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span> merges everything is one cluster. The record of all merges, drawn as a tree with each merge at the height of its distance, is the <b>dendrogram</b>. Cut it with a horizontal line and every branch below the line is a cluster: a low cut gives many small clusters, a high cut a few big ones. No <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">k</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span></span></span></span> is needed in advance; a big jump in merge height suggests a natural cut.</p>
+<p>"Closest clusters" needs a rule, the <b>linkage</b>:</p>
+<ul>
+<li><b>single</b>: the nearest pair of points. Follows chains and curves, but one stray bridge can join two groups.</li>
+<li><b>complete</b>: the farthest pair. Compact clusters, sensitive to outliers.</li>
+<li><b>average</b>: the mean over all pairs, a compromise.</li>
+<li><b>Ward</b>: merge the pair that increases the total within-cluster spread the least. Like k-means, it prefers round, even groups.</li>
+</ul>
+<p><b>DBSCAN</b> (density-based spatial clustering of applications with noise) has two settings: a radius <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> and a count, <code>min_samples</code>. A point with at least <code>min_samples</code> points within <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> (itself included) is a <b>core</b> point. Core points within <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> of each other belong to the same cluster, so a cluster grows through the crowd like a chain of handshakes. A non-core point within <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> of a core point is a <b>border</b> point; everything else is <b>noise</b>. DBSCAN finds the number of clusters by itself, follows any shape, and labels outliers instead of forcing them into a cluster.</p>
+<p>Its weakness: one <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> for the whole dataset. A tight crowd and a loose one need different radii. <b>HDBSCAN</b> tries all radii at once and keeps the clusters that survive longest; you only say how small a cluster may be.</p>
+<p class="big-idea">Hierarchical clustering records every merge in a tree you can cut anywhere; DBSCAN grows clusters through dense crowds and calls the rest noise.</p>
+</div></section>
+
+<section class="step reveal" id="play"><div class="step-head"><span class="badge"><img src="../assets/icons/step-play.svg" alt=""></span><div><span class="label">Play</span><h2>Cut the tree</h2></div><span class="mins">2 min</span></div><div class="card">
+<p>Drag the dashed line in the dendrogram. Each colored branch below the line is one cluster on the left.</p>
+<div data-widget="dendro"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">With <b>2 moons</b>, compare <b>single</b> and <b>ward</b> at two clusters: which one follows the curves? Then switch to <b>3 blobs</b> and try <b>single</b>: where does the long chain of merges happen? Look for the cut with the biggest gap above it.</p>
+</div></div>
+<p>Now DBSCAN. Big dots are core points, small ones border points, crosses noise.</p>
+<div data-widget="dbscan"></div>
+<div class="callout try"><img src="../assets/icons/ui-try.svg" alt=""><div><span class="title">Try this</span>
+<p class="mb0">Find an <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> that gives exactly the two moons and leaves the strays as noise. Then switch to <b>crowds of different density</b>. A small <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> tears the loose crowd apart; a big one lets the loose crowd swallow its tight neighbor. Find the best compromise: how many of the loose crowd's points are still called noise?</p>
+</div></div>
+</div></section>
+
+<section class="step reveal" id="code"><div class="step-head"><span class="badge"><img src="../assets/icons/step-code.svg" alt=""></span><div><span class="label">Code</span><h2>Clustering in code</h2></div><span class="mins">2 min</span></div><div class="card">
+<div class="nb-bar"><img class="nb-ico" src="../assets/icons/ui-notebook.svg" alt=""><div class="txt"><b>The notebook for this lesson</b>Every code cell below, with what it printed, is in <code>ml-w8d3.ipynb</code>. To change the code and run it yourself, open the notebook in Google Colab (free, in your browser) or download it for your own Jupyter.</div><div class="btn-row"><a class="btn small" href="https://colab.research.google.com/github/SaraAminpour/saraaminpour.com/blob/main/public/tutorials/notebooks/ml/ml-w8d3.ipynb" target="_blank" rel="noopener">Open in Colab</a><a class="btn soft small" href="../notebooks/ml/ml-w8d3.ipynb" download>Download notebook</a></div></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 1 · a dendrogram with SciPy</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np
+<span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt
+<span class="hljs-keyword">from</span> scipy.cluster.hierarchy <span class="hljs-keyword">import</span> linkage, dendrogram, fcluster, set_link_color_palette
+<span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_blobs
+
+X, _ = make_blobs(n_samples=<span class="hljs-number">30</span>, centers=[[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">4</span>, <span class="hljs-number">1</span>], [<span class="hljs-number">1.5</span>, <span class="hljs-number">4</span>]], cluster_std=<span class="hljs-number">0.7</span>, random_state=<span class="hljs-number">2</span>)
+Z = linkage(X, method=<span class="hljs-string">&quot;ward&quot;</span>)              <span class="hljs-comment"># each row of Z is one merge: (group a, group b, height, size)</span>
+cut = <span class="hljs-number">5.0</span>
+labels = fcluster(Z, t=cut, criterion=<span class="hljs-string">&quot;distance&quot;</span>)   <span class="hljs-comment"># cut the tree at height 5</span>
+
+palette = np.array([<span class="hljs-string">&quot;#ff8a50&quot;</span>, <span class="hljs-string">&quot;#5577f5&quot;</span>, <span class="hljs-string">&quot;#17a98c&quot;</span>, <span class="hljs-string">&quot;#e45fa3&quot;</span>, <span class="hljs-string">&quot;#7b5cfa&quot;</span>, <span class="hljs-string">&quot;#f0ac2e&quot;</span>, <span class="hljs-string">&quot;#5aa9f2&quot;</span>, <span class="hljs-string">&quot;#bcb7cb&quot;</span>])
+fig, (ax1, ax2) = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, figsize=(<span class="hljs-number">11</span>, <span class="hljs-number">3.8</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+set_link_color_palette(<span class="hljs-built_in">list</span>(palette[:<span class="hljs-number">3</span>]))
+tree = dendrogram(Z, ax=ax2, color_threshold=cut, above_threshold_color=<span class="hljs-string">&quot;#8a85a3&quot;</span>)
+color_of = <span class="hljs-built_in">dict</span>(<span class="hljs-built_in">zip</span>(tree[<span class="hljs-string">&quot;leaves&quot;</span>], tree[<span class="hljs-string">&quot;leaves_color_list&quot;</span>]))     <span class="hljs-comment"># each point gets its branch&#x27;s color</span>
+ax1.scatter(X[:, <span class="hljs-number">0</span>], X[:, <span class="hljs-number">1</span>], c=[color_of[i] <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(X))], s=<span class="hljs-number">40</span>)
+<span class="hljs-keyword">for</span> i, (a, b) <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(X):
+    ax1.annotate(<span class="hljs-built_in">str</span>(i), (a, b), fontsize=<span class="hljs-number">7</span>, xytext=(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>), textcoords=<span class="hljs-string">&quot;offset points&quot;</span>, color=<span class="hljs-string">&quot;#57526f&quot;</span>)
+ax1.set_title(<span class="hljs-string">f&quot;<span class="hljs-subst">{labels.<span class="hljs-built_in">max</span>()}</span> clusters from cutting at height <span class="hljs-subst">{cut}</span>&quot;</span>)
+ax2.axhline(cut, color=<span class="hljs-string">&quot;#2c2842&quot;</span>, ls=<span class="hljs-string">&quot;--&quot;</span>, lw=<span class="hljs-number">1.2</span>)
+ax2.set_title(<span class="hljs-string">&quot;The dendrogram: every merge, and its height&quot;</span>)
+ax2.set_xlabel(<span class="hljs-string">&quot;point number&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d3-dendro-31777e72.png" width="1222" height="430" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 2 · four linkages, two datasets</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.datasets <span class="hljs-keyword">import</span> make_moons
+<span class="hljs-keyword">from</span> sklearn.cluster <span class="hljs-keyword">import</span> AgglomerativeClustering
+
+Xm, _ = make_moons(n_samples=<span class="hljs-number">200</span>, noise=<span class="hljs-number">0.06</span>, random_state=<span class="hljs-number">0</span>)
+Xb, _ = make_blobs(n_samples=<span class="hljs-number">200</span>, centers=[[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">4</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">2</span>, <span class="hljs-number">3.5</span>]], cluster_std=[<span class="hljs-number">0.5</span>, <span class="hljs-number">1.0</span>, <span class="hljs-number">0.7</span>], random_state=<span class="hljs-number">5</span>)
+fig, axes = plt.subplots(<span class="hljs-number">2</span>, <span class="hljs-number">4</span>, figsize=(<span class="hljs-number">13</span>, <span class="hljs-number">5.6</span>), layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> col, method <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>([<span class="hljs-string">&quot;single&quot;</span>, <span class="hljs-string">&quot;complete&quot;</span>, <span class="hljs-string">&quot;average&quot;</span>, <span class="hljs-string">&quot;ward&quot;</span>]):
+    <span class="hljs-keyword">for</span> row, data <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>([Xm, Xb]):
+        k = <span class="hljs-number">2</span> <span class="hljs-keyword">if</span> row == <span class="hljs-number">0</span> <span class="hljs-keyword">else</span> <span class="hljs-number">3</span>
+        lab = AgglomerativeClustering(n_clusters=k, linkage=method).fit_predict(data)
+        axes[row, col].scatter(data[:, <span class="hljs-number">0</span>], data[:, <span class="hljs-number">1</span>], c=palette[lab], s=<span class="hljs-number">10</span>)
+        axes[row, col].set_xticks([])
+        axes[row, col].set_yticks([])
+    axes[<span class="hljs-number">0</span>, col].set_title(<span class="hljs-string">f&quot;<span class="hljs-subst">{method}</span> linkage&quot;</span>)
+axes[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>].set_ylabel(<span class="hljs-string">&quot;2 moons&quot;</span>)
+axes[<span class="hljs-number">1</span>, <span class="hljs-number">0</span>].set_ylabel(<span class="hljs-string">&quot;3 blobs&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d3-linkage-29023034.png" width="1442" height="628" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<p>Single linkage is the only one that traces the moons, and the only one that fails on the blobs: it chains two blobs together and gives one stray point a cluster of its own. No linkage wins everywhere.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 3 · DBSCAN: core, border, noise</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.cluster <span class="hljs-keyword">import</span> DBSCAN
+
+rng = np.random.default_rng(<span class="hljs-number">0</span>)
+Xn = np.vstack([Xm, rng.uniform([-<span class="hljs-number">1.5</span>, -<span class="hljs-number">1</span>], [<span class="hljs-number">2.5</span>, <span class="hljs-number">1.5</span>], size=(<span class="hljs-number">25</span>, <span class="hljs-number">2</span>))])   <span class="hljs-comment"># moons plus 25 stray points</span>
+db = DBSCAN(eps=<span class="hljs-number">0.2</span>, min_samples=<span class="hljs-number">5</span>).fit(Xn)
+lab = db.labels_
+core = np.zeros(<span class="hljs-built_in">len</span>(Xn), <span class="hljs-built_in">bool</span>)
+core[db.core_sample_indices_] = <span class="hljs-literal">True</span>
+<span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;clusters: <span class="hljs-subst">{lab.<span class="hljs-built_in">max</span>() + <span class="hljs-number">1</span>}</span>, core points: <span class="hljs-subst">{core.<span class="hljs-built_in">sum</span>()}</span>, border points: <span class="hljs-subst">{(~core &amp; (lab &gt;= <span class="hljs-number">0</span>)).<span class="hljs-built_in">sum</span>()}</span>, noise: <span class="hljs-subst">{(lab == -<span class="hljs-number">1</span>).<span class="hljs-built_in">sum</span>()}</span>&quot;</span>)
+
+plt.figure(figsize=(<span class="hljs-number">6.4</span>, <span class="hljs-number">3.8</span>))
+plt.scatter(*Xn[core].T, c=palette[lab[core]], s=<span class="hljs-number">28</span>, label=<span class="hljs-string">&quot;core&quot;</span>)
+plt.scatter(*Xn[~core &amp; (lab &gt;= <span class="hljs-number">0</span>)].T, c=palette[lab[~core &amp; (lab &gt;= <span class="hljs-number">0</span>)]], s=<span class="hljs-number">10</span>, label=<span class="hljs-string">&quot;border&quot;</span>)
+plt.scatter(*Xn[lab == -<span class="hljs-number">1</span>].T, c=<span class="hljs-string">&quot;#8a85a3&quot;</span>, marker=<span class="hljs-string">&quot;x&quot;</span>, s=<span class="hljs-number">24</span>, label=<span class="hljs-string">&quot;noise&quot;</span>)
+plt.legend(loc=<span class="hljs-string">&quot;upper right&quot;</span>)
+plt.title(<span class="hljs-string">&quot;DBSCAN follows the moons and leaves the strays out&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><pre class="text">clusters: 2, core points: 203, border points: 7, noise: 15</pre><img src="../assets/out/ml-w8d3-dbscan-2f7345c9.png" width="609" height="398" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 4 · choosing eps</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.neighbors <span class="hljs-keyword">import</span> NearestNeighbors
+
+dist, _ = NearestNeighbors(n_neighbors=<span class="hljs-number">5</span>).fit(Xn).kneighbors(Xn)   <span class="hljs-comment"># includes the point itself, like min_samples</span>
+kdist = np.sort(dist[:, -<span class="hljs-number">1</span>])
+plt.figure(figsize=(<span class="hljs-number">6.4</span>, <span class="hljs-number">3.4</span>))
+plt.plot(kdist, color=<span class="hljs-string">&quot;#7b5cfa&quot;</span>)
+plt.axhline(<span class="hljs-number">0.2</span>, color=<span class="hljs-string">&quot;#2c2842&quot;</span>, ls=<span class="hljs-string">&quot;--&quot;</span>, lw=<span class="hljs-number">1.2</span>)
+plt.text(<span class="hljs-number">5</span>, <span class="hljs-number">0.22</span>, <span class="hljs-string">&quot;eps = 0.2&quot;</span>, color=<span class="hljs-string">&quot;#2c2842&quot;</span>)
+plt.xlabel(<span class="hljs-string">&quot;points, sorted&quot;</span>)
+plt.ylabel(<span class="hljs-string">&quot;distance to 5th neighbor&quot;</span>)
+plt.title(<span class="hljs-string">&quot;Crowded points on the left, strays on the right&quot;</span>)
+plt.show()</code></pre><details class="out"><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d3-eps-4a762c0c.png" width="622" height="387" alt="Figure produced by this code" loading="lazy"></div></details></div>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">cell 5 · HDBSCAN for uneven crowds</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">from</span> sklearn.cluster <span class="hljs-keyword">import</span> HDBSCAN
+
+Xd, _ = make_blobs(n_samples=[<span class="hljs-number">150</span>, <span class="hljs-number">150</span>, <span class="hljs-number">60</span>], centers=[[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">5</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">2.5</span>, <span class="hljs-number">4</span>]], cluster_std=[<span class="hljs-number">0.3</span>, <span class="hljs-number">1.2</span>, <span class="hljs-number">0.5</span>], random_state=<span class="hljs-number">3</span>)
+fig, axes = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, figsize=(<span class="hljs-number">12</span>, <span class="hljs-number">3.4</span>), sharey=<span class="hljs-literal">True</span>, layout=<span class="hljs-string">&quot;constrained&quot;</span>)
+<span class="hljs-keyword">for</span> ax, (name, model) <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(axes, [(<span class="hljs-string">&quot;DBSCAN, eps = 0.3&quot;</span>, DBSCAN(eps=<span class="hljs-number">0.3</span>, min_samples=<span class="hljs-number">5</span>)),
+                                     (<span class="hljs-string">&quot;DBSCAN, eps = 1.0&quot;</span>, DBSCAN(eps=<span class="hljs-number">1.0</span>, min_samples=<span class="hljs-number">5</span>)),
+                                     (<span class="hljs-string">&quot;HDBSCAN&quot;</span>, HDBSCAN(min_cluster_size=<span class="hljs-number">15</span>, copy=<span class="hljs-literal">True</span>))]):
+    lab = model.fit_predict(Xd)
+    ax.scatter(Xd[:, <span class="hljs-number">0</span>], Xd[:, <span class="hljs-number">1</span>], c=np.where(lab &gt;= <span class="hljs-number">0</span>, palette[lab % <span class="hljs-number">8</span>], <span class="hljs-string">&quot;#d9d5e6&quot;</span>), s=<span class="hljs-number">10</span>)
+    ax.set_title(<span class="hljs-string">f&quot;<span class="hljs-subst">{name}</span>: <span class="hljs-subst">{lab.<span class="hljs-built_in">max</span>() + <span class="hljs-number">1</span>}</span> clusters, <span class="hljs-subst">{(lab == -<span class="hljs-number">1</span>).<span class="hljs-built_in">sum</span>()}</span> noise&quot;</span>)
+plt.show()</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><img src="../assets/out/ml-w8d3-hdbscan-8bc51a7e.png" width="1332" height="386" alt="Figure produced by this code" loading="lazy"></div></details></div>
+</div></section>
+
+<section class="step reveal" id="try"><div class="step-head"><span class="badge"><img src="../assets/icons/ui-try.svg" alt=""></span><div><span class="label">Your turn</span><h2>Your turn: sweep eps</h2></div><span class="mins">optional</span></div><div class="card">
+<p>Run DBSCAN on the moons with strays for <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ε</mi></mrow><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">ε</span></span></span></span> from 0.05 to 0.5, and print the number of clusters and noise points for each.</p>
+<div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">exercise · in your notebook</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> eps <span class="hljs-keyword">in</span> [<span class="hljs-number">0.05</span>, <span class="hljs-number">0.1</span>, <span class="hljs-number">0.15</span>, <span class="hljs-number">0.2</span>, <span class="hljs-number">0.3</span>, <span class="hljs-number">0.5</span>]:
+    lab = <span class="hljs-literal">None</span>   <span class="hljs-comment"># <span class="hljs-doctag">TODO:</span> DBSCAN(eps=eps, min_samples=5).fit_predict(Xn)</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;eps <span class="hljs-subst">{eps:<span class="hljs-number">.2</span>f}</span>: clusters <span class="hljs-subst">{<span class="hljs-literal">None</span>}</span>, noise points <span class="hljs-subst">{<span class="hljs-literal">None</span>}</span>&quot;</span>)</code></pre></div>
+<details class="hint"><summary>Need a hint?</summary><div><p><code>lab.max() + 1</code> counts the clusters (labels start at 0) and <code>(lab == -1).sum()</code> counts the noise points.</p></div></details>
+<details class="solution"><summary>Show a solution</summary><div class="codecell"><div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="name">one solution</span><button type="button" class="btn-copy">Copy</button></div><pre><code><span class="hljs-keyword">for</span> eps <span class="hljs-keyword">in</span> [<span class="hljs-number">0.05</span>, <span class="hljs-number">0.1</span>, <span class="hljs-number">0.15</span>, <span class="hljs-number">0.2</span>, <span class="hljs-number">0.3</span>, <span class="hljs-number">0.5</span>]:
+    lab = DBSCAN(eps=eps, min_samples=<span class="hljs-number">5</span>).fit_predict(Xn)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;eps <span class="hljs-subst">{eps:<span class="hljs-number">.2</span>f}</span>: clusters <span class="hljs-subst">{lab.<span class="hljs-built_in">max</span>() + <span class="hljs-number">1</span>}</span>, noise points <span class="hljs-subst">{(lab == -<span class="hljs-number">1</span>).<span class="hljs-built_in">sum</span>()}</span>&quot;</span>)
+<span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Only eps = 0.2 finds the two moons. Smaller: noise and fragments. Bigger: the moons and strays melt into one blob.&quot;</span>)</code></pre><details class="out" open><summary>What it printed in the notebook</summary><div class="content"><pre class="text">eps 0.05: clusters 0, noise points 225
+eps 0.10: clusters 19, noise points 73
+eps 0.15: clusters 3, noise points 20
+eps 0.20: clusters 2, noise points 15
+eps 0.30: clusters 1, noise points 10
+eps 0.50: clusters 1, noise points 6
+Only eps = 0.2 finds the two moons. Smaller: noise and fragments. Bigger: the moons and strays melt into one blob.</pre></div></details></div></details>
+</div></section>
+
+<section class="step reveal" id="check"><div class="step-head"><span class="badge"><img src="../assets/icons/step-check.svg" alt=""></span><div><span class="label">Check yourself</span><h2>Quick check</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="quiz"><div class="q" data-answer="1" data-lesson="ml-w8d3" data-qid="q1"><div class="qn">Question 1 of 3</div><div class="prompt">You cut a dendrogram lower down. What happens?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="That's a higher cut."><span class="key">A</span><span>Fewer, bigger clusters</span></button><button type="button" class="opt" data-i="1" data-why="Only merges below the line count, so groups that merge higher up stay separate."><span class="key">B</span><span>More, smaller clusters</span></button><button type="button" class="opt" data-i="2" data-why="The tree is fixed; only the cut moves."><span class="key">C</span><span>The tree changes</span></button><button type="button" class="opt" data-i="3" data-why="Try it in the widget!"><span class="key">D</span><span>Nothing</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="1" data-lesson="ml-w8d3" data-qid="q2"><div class="qn">Question 2 of 3</div><div class="prompt">In DBSCAN, which points are labeled noise?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="DBSCAN never computes a mean."><span class="key">A</span><span>Points far from the mean</span></button><button type="button" class="opt" data-i="1" data-why="Not in a crowd and not next to one."><span class="key">B</span><span>Points that aren't core points and aren't within eps of any core point</span></button><button type="button" class="opt" data-i="2" data-why="Every cluster, however small, keeps its label."><span class="key">C</span><span>The smallest cluster</span></button><button type="button" class="opt" data-i="3" data-why="The threshold is min_samples, which you choose."><span class="key">D</span><span>Points with fewer than 2 neighbors</span></button></div><div class="feedback" aria-live="polite"></div></div><div class="q" data-answer="2" data-lesson="ml-w8d3" data-qid="q3"><div class="qn">Question 3 of 3</div><div class="prompt">Which method would you try first to find curved clusters with outliers in between?</div><div class="opts"><button type="button" class="opt" data-i="0" data-why="Round groups only, and every outlier is forced into a cluster."><span class="key">A</span><span>k-means</span></button><button type="button" class="opt" data-i="1" data-why="Ward prefers round groups too."><span class="key">B</span><span>Ward linkage</span></button><button type="button" class="opt" data-i="2" data-why="It follows any shape and sets outliers aside as noise."><span class="key">C</span><span>DBSCAN</span></button><button type="button" class="opt" data-i="3" data-why="Compact groups, and outliers distort it."><span class="key">D</span><span>Complete linkage</span></button></div><div class="feedback" aria-live="polite"></div></div></div>
+</div></section>
+
+<section class="step reveal" id="wrap"><div class="step-head"><span class="badge"><img src="../assets/icons/step-wrap.svg" alt=""></span><div><span class="label">Wrap-up</span><h2>Today in one sentence</h2></div><span class="mins">1 min</span></div><div class="card">
+<div class="takeaway"><img src="../assets/icons/step-wrap.svg" alt="">Hierarchical clustering merges the closest groups step by step into a dendrogram you can cut at any height, with the linkage deciding what "closest" means; DBSCAN grows clusters through crowds of core points and labels the rest as noise, and HDBSCAN copes with crowds of different density.</div>
+<div class="callout deeper"><img src="../assets/icons/ui-book.svg" alt=""><div><span class="title">Go deeper (optional)</span>
+<p class="mb0">ISLP section 12.4.2 (hierarchical clustering, with a good discussion of linkages and of where to cut). The originals: Ester, Kriegel, Sander and Xu, "A density-based algorithm for discovering clusters in large spatial databases with noise" (KDD, 1996), and Campello, Moulavi and Sander (2013) for HDBSCAN. The scikit-learn user guide has a picture comparing every clustering method on six toy datasets: search for "comparing different clustering algorithms on toy datasets".</p>
+</div></div>
+<p class="muted mb0">Tomorrow: t-SNE, a way to draw a map of data with 64 dimensions on a flat page.</p>
+</div></section>
+
+<section class="step" id="finish"><div class="card done-box" data-lesson="ml-w8d3">
+  <img src="../assets/img/qubi-cheer.svg" width="110" height="110" alt="" style="margin:0 auto 10px">
+  <h2 style="margin-bottom:6px">That's the lesson!</h2>
+  <p class="muted" style="max-width:460px;margin:0 auto 18px">Tap the button to save it. Short and steady wins.</p>
+  <button type="button" class="btn ml btn-done"><img src="../assets/icons/ui-check.svg" alt=""><span class="label">I finished this lesson</span></button>
+  <div class="after"><a class="next-card" href="../ml/w8d4.html"><img src="../assets/icons/tsne.svg" alt=""><span><small>Next in Machine Learning</small><span class="t">t-SNE: maps of high-dimensional data</span></span></a><div class="also-today" data-date="2026-12-23" data-track="ml"></div><p class="small muted" style="margin-top:12px">Marked by mistake? <a href="#" class="undo-done">Undo</a></p></div>
+</div></section>
+<nav class="pager"><a href="../ml/w8d2.html">← Boosting</a><a href="../ml/w8d4.html">t-SNE maps →</a></nav>
+  </div>
+</div>
+</main>
+<footer class="footer"><img src="../assets/img/qubi-wave.svg" width="56" height="56" alt="" style="margin:0 auto 8px"><div>Written by <a href="/">Sara Aminpour</a> · INQUIRE Laboratory, University of Oklahoma</div><div class="small">Your progress (finished lessons and quiz answers) is saved in this browser only and never sent anywhere.</div></footer>
+</body>
+</html>
